@@ -216,47 +216,107 @@ for the normal random variable with mean m and variance v, written $x \sim N(m, 
 
 \par \noindent Here is an alternative characterization of the univariate normal distribution in terms of moment-generating functions.  a random variable x has a normal distribution if and only if $E \{exp(tx)\} = exp(mt + vt2/2)$ for some real m and positive real v. Remember that $E(\cdot)$ denotes the expected value of its argument under the given probability distribution. We will generalize this definition to the multivariate normal.
 
-\begin{enumerate}[label=(\Alph*)]
-\item First, some simple moment identities. The covariance matrix cov(x) of a vector-valued random variable x is defined as the matrix whose (i, j) entry is the covariance between xi and xj. In matrix notation, cov(x) = E{(x   ?)(x   ?)T}, where ? is the mean vector whose ith component is E(xi). Prove the following: (1)cov(x) = E(xxT)   ??T; and (2) cov(Ax + b) = Acov(x)AT for matrix A and vector b.
 
-\item Consider the random vector z = (z1, . . . , zp)T, with each entry having an independent standard normal distribution (that is, mean 0 and variance 1). Derive the probability density function (PDF) and moment-generating function (MGF) of z, expressed in vector notation.5 We say that z has a standard multivariate normal distri- bution.
+\begin{enumerate}[label=(\Alph*)]
+\item First, some simple moment identities. The covariance matrix cov(x) of a vector-valued random variable x is defined as the matrix whose (i, j) entry is the covariance between $x_i$ and $x_j$. In matrix notation, $cov(x) = E\{(x - \mu)(x - \mu)^T\}$, where $\mu$ is the mean vector whose i-th component is $E(x_i)$. Prove the following: (1) $cov(x) = E(xxT) - \mu\mu^T$ and(2) $cov(Ax + b) = Acov(x)A^T$ for matrix A and vector b.
+
+\par * see images \textbf{multivariatenorm-a1.JPG} and \textbf{multivariatenorm-a2.JPG}
+
+\item Consider the random vector $z = (z1, . . . , zp)^T$, with each entry having an independent standard normal distribution (that is, mean 0 and variance 1). Derive the probability density function (PDF) and moment-generating function (MGF) of z, expressed in vector notation.  We say that z has a standard multivariate normal distribution. * Remember that the MGF of a vector- valued random variable x is the expected value of the quantity $e^{t^T x}$, as a function of the vector argument t.
+
+\par * see images \textbf{multivariatenorm-b.JPG}
 
 \item A vector-valued random variable x = (x1, . . . , xp)
 variate normal distribution if and only if every linear combination of its components is univariate normal. That is, for all vectors a not identically zero, the scalar quantity z = aT x is normally distributed. From this definition, prove that x is multivariate normal, written
 x ? N(?, S), if and only if its moment-generating function is of the form E(exp{tT x}) = exp(tT ? + tT St/2). Hint: what are the mean, variance, and moment-generating function of z, expressed in terms of moments of x?
 
+\par * see images \textbf{multivariatenorm-c.JPG}
+
 \item Another basic theorem is that a random vector is multivariate nor- mal if and only if it is an affine transformation of independent univariate normals. You will first prove the ?if? statement. Let z have a standard multivariate normal distribution, and define the random vector x = Lz + ? for some p ? p matrix L of full column rank.6 Prove that x is multivariate normal. In addition, use the mo- ment identities you proved above to compute the expected value and covariance matrix of x.
 
+\par * see images \textbf{multivariatenorm-d.JPG}
+
 \item Now for the ?only if.? Suppose that x has a multivariate normal distribution. Prove that x can be written as an affine transformation of standard normal random variables. (Note: a good way to prove that something can be done is to do it!) Use this insight to propose an algorithm for simulating multivariate normal random variables with a specified mean and covariance matrix.
+
+\par todo
 
 \item Use this last result, together with the PDF of a standard multi- variate normal, to show that the PDF of a multivariate normal
 x ? N(?, S) takes the form p(x) = C exp{ Q(x   ?)/2} for some constant C and quadratic form Q(x   ?).
 
+\par * see images \textbf{multivariatenorm-f.JPG}
+
 \item Letx ? N(? ,S )andx ? N(? ,S ),wherex andx are 11122212
 independent of each other. Let y = Ax1 + Bx2 for matrices A, B of full column rank and appropriate dimension. Note that x1 and x2 need not have the same dimension, as long as Ax1 and Bx2 do. Use your previous results to characterize the distribution of y.
+
+\par * see images \textbf{multivariatenorm-g.JPG}
 
 \end{enumerate}
 
 \textit{Conditionals and marginals}
-Suppose that x ? N(?, S) has a multivariate normal distribution. Let x1 and x2 denote an arbitrary partition of x into two sets of components. Because we can relabel the components of x without changing their distribution, we can safely assume that x1 comprises the first k elements ofx,andx2 thelastp k.Wewillalsoassumethat?andShavebeen partitioned conformably with x:
-?=(?1,?2)T and S= S11 S12 !. S21 S22
-Clearly S21 = S1T2, as S is a symmetric matrix.
+Suppose that $x \sim N(\mu, \Sigma)$ has a multivariate normal distribution. Let x1 and x2 denote an arbitrary partition of x into two sets of components. Because we can relabel the components of x without changing their distribution, we can safely assume that x1 comprises the first k elements of x, and x2 the last p - k . We will also assume that $\mu$ and $\Sigma$ have been partitioned conformably with x:
+
+
+$\mu = (\mu_1,\mu_2)^T$ and $\Sigma = \big( \begin{matrix} \Sigma_{11} & \Sigma_{12} \\ \Sigma_{21} & \Sigma_{22}\end{matrix} \big)$
+
+Clearly $\Sigma_{21} = \Sigma_{12}^T$, as $\Sigma$ is a symmetric matrix.
 \begin{enumerate}[label=(\Alph*)]
-\item a
-\item b
-\item c
+\item Derive the marginal distribution of x1. (Remember your result about affine transformations.)
+\par * see image \textbf{conditionals-marginals-a-and-b-1.JPG}
+
+\item Let $\Omega = \Sigma^{-1}$ be the inverse covariance matrix, or precision matrix, of x, and partition $\Omega$ just as you did $\Sigma$:
+$$\Omega = \big( \begin{matrix} \Omega_{11} & \Omega_{12} \\ \Omega_{21} & \Omega_{22}\end{matrix} \big)$$
+Using (or deriving!) identities for the inverse of a partitioned matrix, express each block of $\Omega$ in terms of blocks of $\Sigma$.
+\par * see images \textbf{conditionals-marginals-a-and-b-1.JPG} and \textbf{conditionals-marginals-b-2.JPG}
+
+\item Derive the conditional distribution for $x_1$, given $x_2$, in terms of the partitioned elements of $x$, $\mu$, and $\Sigma$. There are several keys to inner peace: work with densities on a log scale, ignore constants that don?t affect $x_1$, and remember the cute trick of completing the square from basic algebra. (see note 8) Explain briefly how one may interpret this conditional distribution as a linear regression on $x_2$, where the regression matrix can be read off the precision matrix.
+
+\par * see images \textbf{conditionals-marginals-c.JPG} 
+
 \end{enumerate}
 
 \problem{Multiple regression: three classical principles for inference}
 \begin{enumerate}[label=(\Alph*)]
-\item a
-\item b
+\item Show that all three of these principles lead to the same estimator.
+\par * see images \textbf{multipleregression-a.JPG} 
+
+\item Now suppose you trust some observations more than others, and will estimate b by minimizing the weighted sum of squared errors,
+$$\hat{B} =  $$
+where the wi are weights. (Trustworthy observations have large weights.) Derive this estimator, and show that it corresponds to the maximum-likelihood solution under heteroscedastic Gaussian error:
+$$\hat{B} =  $$
+Make sure you explicitly connect the weights wi and the idiosyncratic variances $\sigma_2$.
+\par * see images \textbf{multipleregression-b.JPG} 
 \end{enumerate}
 
 \problem{Quantifying uncertainty: some basic frequentist ideas}
+\textit{In linear regression}In frequentist inference, inferential uncertainty is usually characterized by the sampling distribution, which expresses how one?s estimate is likely to change under repeated sampling. The idea is simple: unstable estimators should not be trusted, and should therefore come with large
+error bars. This should be a familiar concept, but in case it is not, consult the tutorial on sampling distributions in this chapter?s references.Suppose, as in the previous section, that we observe data from a linear regression model with Gaussian error:
+$$y = XB + \epsilon ,    \epsilon ~ N(0,\sigma^2I)$$
+
 \begin{enumerate}[label=(\Alph*)]
-\item a
-\item b
+\item Derive the sampling distribution of your estimator for b from the previous problem.
+\par * see images \textbf{quantifying-uncertainity-a.JPG}  and \textbf{quantifying-uncertainity-a-inclass.JPG}
+
+\item This sampling distribution depends on $\sigma^2$, yet this is unknown. Suppose that you still wanted to quantify your uncertainty about the individual regression coefficients. Propose a strategy for calculating standard errors for each $B_j$. Then consult the data set on ozone concentration in Los Angeles, where the goal is to regress daily ozone concentration on a set of other atmospheric variables. This is available from the R package ?mlbench,? with my R script ?ozone.R? giving you a head start on processing things.Calculate standard errors using your method, and then using the pre-packaged lm function in R. Note: you may have an essentially correct strategy for calculating standard errors that yields some- thing slightly different from the lm function. If so, that?s OK?can you explain the discrepancy?
+\par * see images \textbf{quantifying-uncertainity-b-inclass.JPG}  and \textbf{ozone.R}
+
+\end{enumerate}
+
+\problem{Propagating uncertainty}
+Suppose you have taken data and estimated some parameters $\theta_1, . . . , \theta_P$ of a multivariate statistical model?for example, the regression model of the previous problem. Call your estimate $\hat{\theta} = (\hat{\theta^1}, . . . , \hat{\theta^P})^T$. Suppose that you also have an estimate of the covariance matrix of the sampling distribution of $\hat{\theta}$:
+
+$$\hat{\Sigma} \approx cov(\hat{\theta})= E[ (\hat{\theta} - \bar{\theta})(\hat{\theta} - \bar{\theta})^T]$$
+where the expectation is under the sampling distribution for the data, given the true parameter $\theta$. Here $\bar{\theta}$ denotes the mean of the sampling distribution.\par If you want to report uncertainty about the $\hat{\theta}_j$'s you can do so by peeling off the diagonal of the estimated covariance matrix: $\hat{\Sigma}_{jj} = \hat{\sigma}_j^2$ is the square of the ordinary standard error of $\hat{\theta}_j$. But what if you want toreport uncertainty about some function involving multiple components of the estimate $\hat{\theta}$?
+\begin{enumerate}[label=(\Alph*)]
+
+\item Start with the trivial case where you want to estimate 
+$$f(\theta) = \theta_1 + \theta_2$$ 
+Calculate the standard error of $f(\hat{\theta})$, and generalize this to the case where f is the sum of all p components of $\hat{\theta}$.
+
+\par * see images \textbf{propagatinguncertainity-a-b.JPG}
+
+\item What now if f is a nonlinear function of the $\hat{\theta}_j$'s? Propose an approximation for $var\{ f(\hat{\theta} )\}$, where f is any sufficiently smooth function. (As above, the variance is under the sampling distribution of the data, given the true parameter.)There are obviously many potential strategies that might work, but here?s one you might find fruitful: try a first-order Taylor approxi- mationof f(q?)aroundtheunknowntruevalueq.Trytoboundthe size of the likely error of the approximation, or at least talk gener- ally about what kinds of assumptions or features of f or p(q? | q) might be relevant. You should also reflect on some of the potential caveats of this approach.
+
+\par * see images \textbf{propagatinguncertainity-a-b.JPG}
 \end{enumerate}
 
 \problem{Bootstrapping}
