@@ -252,8 +252,9 @@ independent of each other. Let y = Ax1 + Bx2 for matrices A, B of full column ra
 
 \end{enumerate}
 
-\textit{Conditionals and marginals}
-Suppose that $x \sim N(\mu, \Sigma)$ has a multivariate normal distribution. Let x1 and x2 denote an arbitrary partition of x into two sets of components. Because we can relabel the components of x without changing their distribution, we can safely assume that x1 comprises the first k elements of x, and x2 the last p - k . We will also assume that $\mu$ and $\Sigma$ have been partitioned conformably with x:
+\par \noindent \textit{Conditionals and marginals}
+
+\par Suppose that $x \sim N(\mu, \Sigma)$ has a multivariate normal distribution. Let x1 and x2 denote an arbitrary partition of x into two sets of components. Because we can relabel the components of x without changing their distribution, we can safely assume that x1 comprises the first k elements of x, and x2 the last p - k . We will also assume that $\mu$ and $\Sigma$ have been partitioned conformably with x:
 
 
 $\mu = (\mu_1,\mu_2)^T$ and $\Sigma = \big( \begin{matrix} \Sigma_{11} & \Sigma_{12} \\ \Sigma_{21} & \Sigma_{22}\end{matrix} \big)$
@@ -288,21 +289,20 @@ Make sure you explicitly connect the weights wi and the idiosyncratic variances 
 \end{enumerate}
 
 \problem{Quantifying uncertainty: some basic frequentist ideas}
-\textit{In linear regression}In frequentist inference, inferential uncertainty is usually characterized by the sampling distribution, which expresses how one?s estimate is likely to change under repeated sampling. The idea is simple: unstable estimators should not be trusted, and should therefore come with large
-error bars. This should be a familiar concept, but in case it is not, consult the tutorial on sampling distributions in this chapter?s references.Suppose, as in the previous section, that we observe data from a linear regression model with Gaussian error:
+\par \noindent \textit{In linear regression}\par \noindent In frequentist inference, inferential uncertainty is usually characterized by the sampling distribution, which expresses how one's estimate is likely to change under repeated sampling. The idea is simple: unstable estimators should not be trusted, and should therefore come with large error bars. This should be a familiar concept, but in case it is not, consult the tutorial on sampling distributions in this chapter's references.\par \noindent Suppose, as in the previous section, that we observe data from a linear regression model with Gaussian error:
 $$y = XB + \epsilon ,    \epsilon ~ N(0,\sigma^2I)$$
 
 \begin{enumerate}[label=(\Alph*)]
 \item Derive the sampling distribution of your estimator for b from the previous problem.
 \par * see images \textbf{quantifying-uncertainity-a.JPG}  and \textbf{quantifying-uncertainity-a-inclass.JPG}
 
-\item This sampling distribution depends on $\sigma^2$, yet this is unknown. Suppose that you still wanted to quantify your uncertainty about the individual regression coefficients. Propose a strategy for calculating standard errors for each $B_j$. Then consult the data set on ozone concentration in Los Angeles, where the goal is to regress daily ozone concentration on a set of other atmospheric variables. This is available from the R package ?mlbench,? with my R script ?ozone.R? giving you a head start on processing things.Calculate standard errors using your method, and then using the pre-packaged lm function in R. Note: you may have an essentially correct strategy for calculating standard errors that yields some- thing slightly different from the lm function. If so, that?s OK?can you explain the discrepancy?
+\item This sampling distribution depends on $\sigma^2$, yet this is unknown. Suppose that you still wanted to quantify your uncertainty about the individual regression coefficients. Propose a strategy for calculating standard errors for each $B_j$. Then consult the data set on ozone concentration in Los Angeles, where the goal is to regress daily ozone concentration on a set of other atmospheric variables. This is available from the R package "mlbench," with my R script "ozone.R" giving you a head start on processing things.\par Calculate standard errors using your method, and then using the pre-packaged lm function in R. Note: you may have an essentially correct strategy for calculating standard errors that yields some- thing slightly different from the lm function. If so, that?s OK, can you explain the discrepancy?
 \par * see images \textbf{quantifying-uncertainity-b-inclass.JPG}  and \textbf{ozone.R}
 
 \end{enumerate}
 
 \problem{Propagating uncertainty}
-Suppose you have taken data and estimated some parameters $\theta_1, . . . , \theta_P$ of a multivariate statistical model?for example, the regression model of the previous problem. Call your estimate $\hat{\theta} = (\hat{\theta^1}, . . . , \hat{\theta^P})^T$. Suppose that you also have an estimate of the covariance matrix of the sampling distribution of $\hat{\theta}$:
+Suppose you have taken data and estimated some parameters $\theta_1, . . . , \theta_P$ of a multivariate statistical model, for example, the regression model of the previous problem. Call your estimate $\hat{\theta} = (\hat{\theta_1}, . . . , \hat{\theta_P})^T$. Suppose that you also have an estimate of the covariance matrix of the sampling distribution of $\hat{\theta}$:
 
 $$\hat{\Sigma} \approx cov(\hat{\theta})= E[ (\hat{\theta} - \bar{\theta})(\hat{\theta} - \bar{\theta})^T]$$
 where the expectation is under the sampling distribution for the data, given the true parameter $\theta$. Here $\bar{\theta}$ denotes the mean of the sampling distribution.\par If you want to report uncertainty about the $\hat{\theta}_j$'s you can do so by peeling off the diagonal of the estimated covariance matrix: $\hat{\Sigma}_{jj} = \hat{\sigma}_j^2$ is the square of the ordinary standard error of $\hat{\theta}_j$. But what if you want toreport uncertainty about some function involving multiple components of the estimate $\hat{\theta}$?
@@ -314,15 +314,27 @@ Calculate the standard error of $f(\hat{\theta})$, and generalize this to the ca
 
 \par * see images \textbf{propagatinguncertainity-a-b.JPG}
 
-\item What now if f is a nonlinear function of the $\hat{\theta}_j$'s? Propose an approximation for $var\{ f(\hat{\theta} )\}$, where f is any sufficiently smooth function. (As above, the variance is under the sampling distribution of the data, given the true parameter.)There are obviously many potential strategies that might work, but here?s one you might find fruitful: try a first-order Taylor approxi- mationof f(q?)aroundtheunknowntruevalueq.Trytoboundthe size of the likely error of the approximation, or at least talk gener- ally about what kinds of assumptions or features of f or p(q? | q) might be relevant. You should also reflect on some of the potential caveats of this approach.
+\item What now if f is a nonlinear function of the $\hat{\theta}_j$'s? Propose an approximation for $var\{ f(\hat{\theta} )\}$, where f is any sufficiently smooth function. (As above, the variance is under the sampling distribution of the data, given the true parameter.)There are obviously many potential strategies that might work, but here?s one you might find fruitful: try a first-order Taylor approxi- mationof f(q?)aroundtheunknowntruevalueq.Trytoboundthe size of the likely error of the approximation, or at least talk gener- ally about what kinds of assumptions or features of f or p(q? | q) might be relevant. You should also reflect on some of the potential caveats of this approach.  
+*If you?re unfamiliar with the idea of the bootstrap, consult he review paper by Efron and Gong entitled ?A Leisurely Look at the Bootstrap, the Jackknife, and Cross-Validation.?  
 
 \par * see images \textbf{propagatinguncertainity-a-b.JPG}
 \end{enumerate}
 
 \problem{Bootstrapping}
+The basic idea is to simulate the process of repeated sampling from the population by re-sampling from your sample (with replacement). 
+The ties and duplicates in your ?bootstrapped samples? will mimic the sampling variability of the true data-generating process. 
 \begin{enumerate}[label=(\Alph*)]
-\item a
-\item b
+\item Let $\hat{\Sigma}$ denote the covariate matrix of the sampling distribution of $\hat{B}$,the least-squares estimator. Write an R function that will estimate $\hat{\Sigma}$ via bootstrapped resampling for a given design matrix $X$ and response vector $y$. Use it to compute $\hat{\Sigma}$  for the ozone data set, and compare it to the parametric estimate based on normal theory.
+
+\par From before, we have 
+$$\hat{B} = (X^TX)^{-1}X^TY$$
+$$ \hat{\Sigma} = cov( \hat{B} ) = \sigma^2(X^TX)^-1$$
+
+\item Now lets look at a few of these ideas. Write R functions that will accomplish the following:
+\begin{enumerate}\item For a specified mean vector $\mu$ and covariance matrix $\Sigma$, simulate multivariate normal random variables.\item For a given sample $x_1, . . . , x_N$ from a multivariate normal distribution, estimate the mean vector and covariance matrix by maximum likelihood. 12 Remember to work on a log scale. R has many possibilities for optimization; the built-in function \textbf{optim} usually works for me. \item Bootstrap a given sample $x_1, . . . , x_N$ to estimate the sampling distribution of the MLE.Try out your code in d = 2 dimensions for a few different sample sizes N. See how well you can recover the true covariance matrix from simulated data.
+
+\par * see \textbf{ozone.R} for A and B responses
+\end{enumerate}
 \end{enumerate}
 
 \clearpage
