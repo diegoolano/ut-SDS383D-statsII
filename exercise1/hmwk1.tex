@@ -94,12 +94,18 @@ We start with a few of the simplest building blocks for complex multivariate sta
 
 \begin{enumerate}[label=(\Alph*)]
 \item Suppose that we take independent observations $X_1, \dots , X_N$ from a Bernoulli sampling model with unknown probability $w$. That is, the $X_i$ are the results of flipping a coin with unknown bias. Suppose that $w$ is given a $\text{Beta}(a,b)$ prior distribution:
+
+
 $$p(w) = \Gamma(a + b) w^{a-1} (1 - w)^{b-1},$$
 where $\Gamma(\cdot)$ denotes the Gamma function. Derive the posterior distribution $p(w | x_1,\dots,x_N)$.
 
-
-By Bayes rule we know, $$p(w | y) = \frac{p(w) * p(y | w )}{p(y)}$$ where $p(w)  \sim Beta(a,b)$ is the prior probability distribution (belief) of results for coin flips, $p(y | w) \sim Binom(w) $ is the sampling model probability distribution with density function $$(p | w) = {n\choose y}w^{y}(1 - w)^{n - y}$$
- and $p(y)$ is the marginal distribution, where $$p(y) = \int p(y,w)  d\theta = \int p(w)p(y|w)$$
+By Bayes rule we know, 
+$$p(w | y) = \frac{p(w) * p(y | w )}{p(y)}$$ 
+where $p(w)  \sim Beta(a,b)$ is the prior probability distribution (belief) of results for coin flips, 
+$p(y | w) \sim Binom(w) $ is the sampling model probability distribution with density function 
+$$(p | w) = {n\choose y}w^{y}(1 - w)^{n - y}$$
+ and $p(y)$ is the marginal distribution, where 
+ $$p(y) = \int p(y,w)  d\theta = \int p(w)p(y|w)$$
  
  Plugging in the values for the prior, the sampling probability and the marginal we get: 
  $$p(w | y) = \frac{ \frac{ \Gamma(a+b)}{ \Gamma(a) \Gamma(b) } w^{a-1} (1 - w )^{b-1} {n\choose y}w^{y}(1 - w)^{n - y} }{ \int p(w)p(y|w)}$$
@@ -114,7 +120,6 @@ Thus a prior Bernouli leads to a posterior Beta, ie the \textbf{Bernoulli-Beta} 
 
 \item The probability density function (PDF) of a gamma random variable, $X \sim Ga(a, b)$, is 
 $$ p(x) = \frac{ b^{a}}{\Gamma(a)}x^{a-1}e^{-bx}$$
-
 
 Suppose that $X_{1} \sim Ga(a_1, 1)$ and that $X_{2} \sim Ga(a_2, 1)$.  \par \noindent Define two new random variables $y1 = x1/(x1 + x2)$ and $y2 = x1 + x2$. 
 
@@ -144,6 +149,7 @@ We observe the left hand side looks like the $Beta(a1,a2)$ distribution \par and
 Because $y_1 \sim Beta(a_1,a_2)$  and $y_1$ is linear combination of $x_1$ and $x_2$ 
 \par and $x_1, x_2 \sim Gamma$ , we can generate $x_1$ and $x_2$ samples to obtain $y_1$ Beta ones.
 \par ...
+
 
 \item Suppose that we take independent observations $x_1, \dots , x_N$ from a normal sampling model with unknown mean $\theta$ and known variance $\sigma^2$: $x_i \sim N(\theta, \sigma^{2})$. Suppose that $\theta$ is given a normal prior distribution with mean $m$ and variance $v$. Derive the posterior distribution $p(\theta | x_1,...,x_N)$.
 \par Our sampling model $\sim N(\theta,\sigma^2)$ has pdf $p( X | \theta ) = \prod_{i=1}^{n}\frac{1}{{(2\sigma^2\pi)}^{1/2}}e^{-\frac{(x_i - \theta)^2}{2\sigma^2}}$.
@@ -202,11 +208,22 @@ p(\theta | X ) & \propto p(X | \theta) p(\theta) \\
 \par \noindent * This is the Normal-Normal model for unknown mean and known idiosyncratic variances.
 \par \noindent The precision ( $(\frac{1}{v} + \sum_{i=1}^N\frac{1}{\sigma_i^2})^2$ is the sum of the prior precision and of each single idiosyncratic precision of the data. The mean is again an average of the prior mean and of the weighted average of the data (weighted by the precisions). This heteroschedastic model is useful when dealing with robust regression.
 
-\item Suppose that $(x | \sigma^2) \sim N(0, \sigma^2)$, and that $1/\sigma^2$ has a Gamma(a,b) prior, defined as above. Show that the marginal distribution of x is Student?s t. This is why the t distribution is often referred to as a \textit{scale mixture of normals}.
-\par So given sampling model $(x | \sigma^2) \sim N(0, \sigma^2)$ and 
-\par prior $\sigma^ 2 \sim Ga(a,b)$ we can write the posterior as $p(\sigma^2 | X) = p(X) $
 
+\item Suppose that $(x | \sigma^2) \sim N(0, \sigma^2)$, and that $1/\sigma^2$ has a Gamma(a,b) prior, defined as above. Show that the marginal distribution of x is a $Student's$ $t$. \\This is why the $t$ distribution is often referred to as a \textit{scale mixture of normals}.\\
+\\ Our sampling model $(x | \sigma^2) \sim N(0, \sigma^2)$ with prior $\frac{1}{\sigma^ 2} \sim Gamma(a,b)$\\ can be rewritten as  $(x | \omega) \sim N(0, \omega)$ with prior $\omega \sim Gamma(a,b)$ given precision $\omega = \frac{1}{\sigma^2}$\\
+thus, the marginal of x is 
+\begin{equation} \begin{split}
+p(x) &= \int f(x|\omega) f(\omega) d\omega \\
+& = \int \big( \frac{\omega}{2\pi} \big)^{1/2} e^{-\frac{\omega}{2}x^2} \cdot \frac{ b^{a}}{\Gamma(a)}\omega^{a-1}e^{-b\omega}\\
+& = \big( \frac{1}{2\pi} \big)^{1/2} \frac{ b^{a}}{\Gamma(a)} \int \omega^{(a + 1/2) - 1}e^{-(b + 1/2x^2)}d \omega
+ \end{split}  \end{equation}
+ The section under the integral is the kernel for a $Beta(a + 1/2, b + 1/2x^2)$ so we can write:
+ \begin{equation} \begin{split}
+ & = \big( \frac{1}{2\pi} \big)^{1/2} \frac{ b^{a}}{\Gamma(a)} \frac{ \Gamma(a + \frac{1}{2})}{(b + \frac{1}{2}x^2)^{a + \frac{1}{2}}} \\
+ & =  \big( \frac{1}{2\pi} \big)^{1/2} \frac{ b^{a}}{\Gamma(a)}  \Gamma(a + \frac{1}{2})(b + \frac{1}{2}x^2)^{-1(a + \frac{1}{2})} \\
+\end{split}  \end{equation}
 \end{enumerate}
+This is in the form of the Student's t distribution
 \problem{The multivariate normal distribution}
 
 \textit{Basics}
@@ -303,7 +320,6 @@ $$y = XB + \epsilon ,    \epsilon ~ N(0,\sigma^2I)$$
 
 \problem{Propagating uncertainty}
 Suppose you have taken data and estimated some parameters $\theta_1, . . . , \theta_P$ of a multivariate statistical model, for example, the regression model of the previous problem. Call your estimate $\hat{\theta} = (\hat{\theta_1}, . . . , \hat{\theta_P})^T$. Suppose that you also have an estimate of the covariance matrix of the sampling distribution of $\hat{\theta}$:
-
 $$\hat{\Sigma} \approx cov(\hat{\theta})= E[ (\hat{\theta} - \bar{\theta})(\hat{\theta} - \bar{\theta})^T]$$
 where the expectation is under the sampling distribution for the data, given the true parameter $\theta$. Here $\bar{\theta}$ denotes the mean of the sampling distribution.\par If you want to report uncertainty about the $\hat{\theta}_j$'s you can do so by peeling off the diagonal of the estimated covariance matrix: $\hat{\Sigma}_{jj} = \hat{\sigma}_j^2$ is the square of the ordinary standard error of $\hat{\theta}_j$. But what if you want toreport uncertainty about some function involving multiple components of the estimate $\hat{\theta}$?
 \begin{enumerate}[label=(\Alph*)]

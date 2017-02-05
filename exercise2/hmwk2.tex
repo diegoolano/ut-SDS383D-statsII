@@ -1,0 +1,130 @@
+\documentclass{homework}
+
+\linespread{1.2}
+
+\usepackage[T1]{fontenc}\usepackage{palatino}
+\usepackage{amssymb,amsmath,amsthm,mathtools}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[babel]{csquotes}
+\usepackage[pdftex]{hyperref}
+\usepackage{enumitem}
+\usepackage[usenames,dvipsnames,table,xcdraw]{xcolor}
+
+\usepackage{graphicx} 
+\usepackage{verbatim} % Commenti in blocco con \begin{comment}
+\usepackage{bm}
+\usepackage[font={small,it}]{caption}
+\usepackage{subcaption}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{enumitem}
+\setlist[enumerate]{label*=\arabic*.}
+	
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{listings}
+
+\definecolor{mygraybackground}{gray}{0.95}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.9,0.9,0.9}
+
+\lstset{language=C++,
+backgroundcolor=\color{lbcolor},
+    tabsize=3,    
+        basicstyle=\scriptsize\ttfamily,
+        showstringspaces=false,
+        breaklines=true,
+        frame=single,
+        numbers=left,
+        showtabs=false,
+        showspaces=false,
+        showstringspaces=false,
+        identifierstyle=\ttfamily,
+        keywordstyle=\color{blue},
+        captionpos=b,   
+        commentstyle=\color{ForestGreen},
+        stringstyle=\color[rgb]{0.627,0.126,0.941},
+        numberstyle=\small\ttfamily\color{Gray}
+}
+
+
+\makeatletter
+\def\BState{\State\hskip-\ALG@thistlm}
+\makeatother
+
+% Simbolo iid
+\newcommand\iid{\stackrel{\mathclap{\normalfont\tiny\mbox{iid}}}{\sim}}
+% Simbolo ind
+\newcommand\ind{\stackrel{\mathclap{\normalfont\tiny\mbox{ind}}}{\sim}}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\sign}{sign}
+
+
+\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
+
+\title{SDS 383D: Exercise 2}
+\author{Diego Garcia-Olano}
+
+\begin{document}
+
+\makeatletter
+\begin{titlepage}
+	\vspace*{\fill}
+	\centering
+	{\huge \@title \par}
+	\vskip0.5cm
+	{\large \@author \par}
+	\vskip0.5cm
+	{\large \today \par}
+	\vspace*{\fill}
+\end{titlepage}
+\makeatother
+
+\newpage 
+\mbox{}
+\thispagestyle{empty}
+\newpage
+
+\setcounter{page}{1}
+
+\problem{Bayes and the Gaussian linear model}
+
+\par \textbf{A simple Gaussian location model}\par Take a simple Gaussian model with unknown mean and variance:$$(yi | \theta,\sigma^2) \sim N(\theta,\sigma^2) , i = 1,\dots,n. (1)$$Let $y$ be the vector of observations $y = (y_1, . . . , y_n)^T$.\\
+\par Suppose we place conjugate normal and inverse-gamma priors on $\theta$  and $\sigma^2$, respectively:
+$$p(\theta | \sigma^2) \sim N(\mu, \tau^2\sigma^2 )$$
+$$\sigma^2 \sim Inv-Gamma(\frac{d}{2}, \frac{\eta}{2} )$$\par where $\mu, \tau > 0$, $d > 0$ and $\eta > 0$ are fixed scalar hyperparameters.\\
+
+\par *Note a crucial choice here: the error variance $\sigma^2$ appears in the prior for $\theta$. 
+\par This affects the interpretation of the hyperparameter $\tau$, \par which is not the prior variance of $\theta$, but rather the prior signal-to-noise ratio.\par This is pretty common thing to do in setting up priors for location parameters: \par to \textit{ scale the prior by the error variance}. There are a few good reasons to do this, \par but historically the primary one has been analytical convenience (as you'll now see). \\
+
+\par \noindent Here's a sensible way to interpret each of these four parameters:
+\begin{itemize}
+\item $\mu$ is a prior guess for $\theta$.
+\item $\tau$ is a prior signal-to-noise ratio \\- that is, how disperse your prior is for $\theta$, relative to the error standard deviation $\sigma$.\item $d$ is like a \textit{"prior sample size"} for the error variance $\sigma^2$.\item $\eta$ is like a \textit{"prior sum of squares"} for the error variance $\sigma^2$. \\ More transparently, $\eta / d$ is like a \textbf{"prior guess"} for the error variance $\sigma^2$. It's not exactly the prior mean for $\sigma^2$, but it's close to the prior mean as $d$ gets larger, since the inverse-gamma(a,b) prior has expected value$$E(\sigma^2) = \frac{b}{a - 1} = \frac{\eta/2}{d /2 - 1} = \frac{\eta}{d - 2}$$if d is large.  This expression is only valid if d > 2.
+\end{itemize}\par \noindent What is meant by \textit{"prior sample size"} ( $d$ ) and \textit{"prior sum of squares"} ( $\eta$ )? 
+\\Remember that \textbf{conjugate priors always resemble the likelihood functions} that they're intended to play nicely with. The \underline{two} relevant quantities in the \underline{likelihood function for $\sigma^2$} are (i) the sample size and (ii) the sums of squares. The prior here is designed to mimic the likelihood function for $\sigma^2$ that you'd get if you had a previous data set with sample size $d$ and sums of squares $\eta$.\\
+\par \textit{Precisions are easier than variances}. It's perfectly fine to work with this form of the prior, and it's easier to interpret this way. But it turns out that we can make the algebra a bit cleaner by working with the precisions:  $\omega = \frac{1}{\sigma^2}$ and $\kappa = \frac{1}{\tau^2}$ instead.
+
+$$p( \theta | \omega) \sim N\big(\mu, (\omega\kappa)^{-1} \big)$$
+$$\omega \sim Gamma(\frac{d}{2}, \frac{\eta}{2} )$$
+
+This means that the joint prior for $(\theta, \omega)$ has the form:
+$$ p(\theta, \omega) \propto \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big)$$
+This is often called the $normal/gamma$ prior for $(\theta, \omega)$ with parameters $(\mu, \kappa, d, \eta)$, \\ and its equivalent to a normal/inverse-gamma prior for $(\theta, \sigma^2)$. \\ The interpretation of $\kappa$ is like a \textit{prior sample size} for the mean $\theta$ \\ \\Note: you can obviously write this joint density for $p(\theta | \omega)$ in a way that combines the exponential terms, but this way keeps the bit involving $\theta$ separate, so that you can recognize the normal kernel.  The term "kernel" is heavily overloaded in statistics so see \url{https://en.wikipedia.org/wiki/Kernel_(statistics)#In_Bayesian_statistics}.
+
+\begin{enumerate}[label=(\Alph*)]
+\item By construction, we know that the marginal prior distribution $p(\theta)$ is a gamma mixture of normals. Show that this takes the form of a centered, scaled t distribution:$$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
+with center $m$, scale $s$, and degrees of freedom $v$, \\ where you fill in the blank for $m$, $s^2$, and $v$ in terms of the four parameters\\ of the normal-gamma family. * you did a problem like this in exercises 1!
+\end{enumerate}
+
+\clearpage
+
+\appendix
+\chapter{R code}
+\label{chap:code}
+
+
+
+
+\end{document}
