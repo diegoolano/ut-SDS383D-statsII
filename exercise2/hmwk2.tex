@@ -60,14 +60,10 @@ backgroundcolor=\color{lbcolor},
 \DeclareMathOperator*{\argmin}{argmin}
 \DeclareMathOperator*{\sign}{sign}
 
-
 \algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
-
 \title{SDS 383D: Exercise 2}
 \author{Diego Garcia-Olano}
-
 \begin{document}
-
 \makeatletter
 \begin{titlepage}
 	\vspace*{\fill}
@@ -80,17 +76,17 @@ backgroundcolor=\color{lbcolor},
 	\vspace*{\fill}
 \end{titlepage}
 \makeatother
-
 \newpage 
 \mbox{}
 \thispagestyle{empty}
 \newpage
-
 \setcounter{page}{1}
 
 \problem{Bayes and the Gaussian linear model}
 
-\par \textbf{A simple Gaussian location model}\par Take a simple Gaussian model with unknown mean and variance:$$(yi | \theta,\sigma^2) \sim N(\theta,\sigma^2) , i = 1,\dots,n. (1)$$Let $y$ be the vector of observations $y = (y_1, . . . , y_n)^T$.\\
+\par \textbf{A simple Gaussian location model}\par Take a simple Gaussian model with unknown mean and variance:
+\begin{equation} \begin{split}(yi | \theta,\sigma^2) \sim N(\theta,\sigma^2) , i = 1,\dots,n. 
+\end{split}\end{equation}Let $y$ be the vector of observations $y = (y_1, . . . , y_n)^T$.\\
 \par Suppose we place conjugate normal and inverse-gamma priors on $\theta$  and $\sigma^2$, respectively:
 $$p(\theta | \sigma^2) \sim N(\mu, \tau^2\sigma^2 )$$
 $$\sigma^2 \sim Inv-Gamma(\frac{d}{2}, \frac{\eta}{2} )$$\par where $\mu, \tau > 0$, $d > 0$ and $\eta > 0$ are fixed scalar hyperparameters.\\
@@ -110,12 +106,108 @@ $$p( \theta | \omega) \sim N\big(\mu, (\omega\kappa)^{-1} \big)$$
 $$\omega \sim Gamma(\frac{d}{2}, \frac{\eta}{2} )$$
 
 This means that the joint prior for $(\theta, \omega)$ has the form:
-$$ p(\theta, \omega) \propto \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big)$$
-This is often called the $normal/gamma$ prior for $(\theta, \omega)$ with parameters $(\mu, \kappa, d, \eta)$, \\ and its equivalent to a normal/inverse-gamma prior for $(\theta, \sigma^2)$. \\ The interpretation of $\kappa$ is like a \textit{prior sample size} for the mean $\theta$ \\ \\Note: you can obviously write this joint density for $p(\theta | \omega)$ in a way that combines the exponential terms, but this way keeps the bit involving $\theta$ separate, so that you can recognize the normal kernel.  The term "kernel" is heavily overloaded in statistics so see \url{https://en.wikipedia.org/wiki/Kernel_(statistics)#In_Bayesian_statistics}.
+\begin{equation} \begin{split}
+p(\theta, \omega) \propto \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big) \cdot exp\big( -\omega \cdot \frac{\eta}{2}\big)
+\end{split}\end{equation}
+This is often called the $normal/gamma$ prior for $(\theta, \omega)$ with parameters $(\mu, \kappa, d, \eta)$, \\ and its equivalent to a normal/inverse-gamma prior for $(\theta, \sigma^2)$. \\ The interpretation of $\kappa$ is like a \textit{prior sample size} for the mean $\theta$ \\ \\
+Note: you can obviously write this joint density for $p(\theta | \omega)$ in a way that combines the exponential terms, but this way keeps the bit involving $\theta$ separate, so that you can recognize the normal kernel.  The term "kernel" is heavily overloaded in statistics so see \url{https://en.wikipedia.org/wiki/Kernel_(statistics)#In_Bayesian_statistics}.
+
 
 \begin{enumerate}[label=(\Alph*)]
-\item By construction, we know that the marginal prior distribution $p(\theta)$ is a gamma mixture of normals. Show that this takes the form of a centered, scaled t distribution:$$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
-with center $m$, scale $s$, and degrees of freedom $v$, \\ where you fill in the blank for $m$, $s^2$, and $v$ in terms of the four parameters\\ of the normal-gamma family. * you did a problem like this in exercises 1!
+\item By construction, we know that the marginal prior distribution $p(\theta)$ is a gamma mixture of normals. Show that this takes the form of a centered, scaled t distribution:
+$$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
+with center $m$, scale $s$, and degrees of freedom $v$, \\ where you fill in the blank for $m$, $s^2$, and $v$ in terms of the four parameters\\ of the normal-gamma family. * you did a problem like this in exercises 1!\\
+
+\par \noindent By definition, the marginal of $\theta$ is the integral of the joint distribution $p(\theta,\omega)$ with respect to $\omega$ (ie, we integrate out $\omega$ ) so 
+\begin{equation} \begin{split}
+p(\theta) & = \int p(\theta, \omega) d\omega \\
+& \propto \int  \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big)  \cdot exp\big( -\omega \cdot \frac{\eta}{2}\big)\\
+& = \int \omega^{\frac{d+1}{2} - 1 } \cdot exp\big(  \frac{\omega\kappa(\theta - \mu)^2 + -\omega\eta}{2}\big) \\
+& = \int \omega^{( \frac{d+1}{2} - 1) } \cdot exp\big(  - \omega ( \frac{\kappa(\theta - \mu)^2 + \eta}{2} )\big) \\
+\end{split} \end{equation}
+This is the kernel for gamma(a,b) for $a = \frac{d + 1}{2}$ and $b = \frac{\kappa(\theta - \mu)^2 + n}{2} $\\ As a probability distribution, it must integrate to 1/c where c is a constant. \\
+In the case for a gamma distribution the leading constant for the pdf is \\$\frac{b^a}{\Gamma(a)} = c$ thus $1/c  =   \frac{\Gamma(a)}{b^a}$ so we can rewrite (1) as:
+\begin{equation} \begin{split}
+& = \Gamma(\frac{d+1}{2})( \frac{\kappa(\theta - \mu)^2 + n}{2} )^{-\frac{d+1}{2}} \\
+& \propto ( \frac{\kappa(\theta - \mu)^2 + n}{2} )^{-\frac{d+1}{2}} \\
+& = ( \frac{n}{2} + \frac{\kappa(\theta - \mu)^2}{2} )^{-\frac{d+1}{2}} \\
+& = \big(\frac{n}{2} \cdot ( 1 + \frac{\kappa(\theta - \mu)^2}{n}) \big)^{-\frac{d+1}{2}} \\
+& = \frac{n}{2}^{-\frac{d+1}{2}} \cdot ( 1 + \frac{\kappa(\theta - \mu)^2}{n})^{-\frac{d+1}{2}} \\
+\end{split} \end{equation}
+Since we only care about the value of the equation with respect to $\theta$, \\we can treat the first part of the equation as constant
+\begin{equation} \begin{split}
+& = ( 1 + \frac{\kappa(\theta - \mu)^2}{n})^{-\frac{d+1}{2}} \\
+\end{split} \end{equation}
+This is close to the form of our solution, $$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
+Thus set $d = v$, $\mu = m$ and set $n = s^2 \cdot v$ to get the centered, scaled t-student form.
+
+\item  Assume the normal sampling model in Eq 1 and the normal-gamma prior in Eq 2. \\
+Calculate joint posterior density $p(\theta, \omega | \textbf{y})$, up to constant factors not depending on $\omega$ or $\theta$. \\Show that this is also a normal/gamma prior in the same form as above:
+$$ p(\theta, \omega | \textbf{y}) \propto \omega^{(d^*+1)/2 - 1}exp\{ -\omega \cdot \frac{\kappa^*(\theta - \mu^*)^2}{2}\}exp\{-\omega \cdot \frac{\eta^*}{2}\}$$
+\par  We have normal sampling model ( eq 1 ):  $(\textbf{y} | \theta,\sigma^2) \sim N(\theta,\sigma^2)  $
+\par  and also normal-gamma prior ( eq 2 ) :  $p(\theta, \omega) \propto \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big) \cdot exp\big( -\omega \cdot \frac{\eta}{2}\big) $\\ 
+Calculate the joint posterior density, 
+\begin{equation} \begin{split}
+p( \theta, \omega | \textbf{y}) & \propto p( \textbf{y} | \theta, \omega) p(\theta, \omega) \\ 
+& = \omega^{n/2}exp\{ -\omega \cdot ( \frac{S_y + n(\bar{y} - \theta)^2}{2} ) \}  \cdot \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big) \cdot exp\big( -\omega \cdot \frac{\eta}{2}\big) \\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\omega ( \frac{S_y + n(\bar{y} - \theta)^2 + \kappa(\theta - \mu)^2 + \eta}{2}) \} \\
+& =  \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2} ( S_y + n\bar{y}^2 + n\theta^2 - 2n\bar{y}\theta + \kappa\theta^2 + \kappa\mu^2 - 2\kappa\theta\mu + \eta ) \} \\
+& =  \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2} \big( (n+\kappa)\theta^2 - 2(n\bar{y} + \kappa\mu)\theta + ( S_y + n\bar{y}^2 + \kappa\mu^2 + \eta) \big)\} \\
+\end{split} \end{equation}
+The term in 2nd part that is multipled by $-\frac{\omega}{2}$ is of the form $ax^2 -2bx + c$ \\so we can complete the square as such:
+\begin{equation} \begin{split}
+ax^2 -2bx + c & = a [ x^2 - 2(\frac{b}{a})x + \frac{c}{a} ] \\
+& =  a [ x^2 - 2(\frac{b}{a})x + (\frac{b}{a})^2 - (\frac{b}{a})^2 + \frac{c}{a} ] \\
+& =  a [ ( x - \frac{b}{a})^2 - (\frac{b}{a})^2  + \frac{c}{a} ] \\
+& =  a( x - \frac{b}{a})^2 - \frac{b^2}{a} + c
+\end{split} \end{equation}
+Now plugging in for $a = n + \kappa$, $x = \theta$, $b = n\bar{y} + \kappa\mu$, and c = the final term in (6), we get: \\
+\begin{equation} \begin{split}
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 - \frac{(n\bar{y} + \kappa\mu)^2}{n + \kappa} + ( S_y + n\bar{y}^2 + \kappa\mu^2 + \eta) \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 - \frac{(n^2\bar{y}^2 + \kappa^2\mu^2 + 2n\bar{y}\kappa\mu)}{n + \kappa} + (n\bar{y}^2 + \kappa\mu^2) +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 - \frac{(n^2\bar{y}^2 + \kappa^2\mu^2 + 2n\bar{y}\kappa\mu)}{n + \kappa} + \frac{n+\kappa}{n+\kappa}(n\bar{y}^2 + \kappa\mu^2) +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 - \frac{(n^2\bar{y}^2 + \kappa^2\mu^2 + 2n\bar{y}\kappa\mu)}{n + \kappa} + \frac{n^2\bar{y}^2 + \kappa n\bar{y}^2 + n\kappa\mu^2+ \kappa^2\mu^2}{n+\kappa} +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 + \frac{(-n^2\bar{y}^2 - \kappa^2\mu^2 - 2n\bar{y}\kappa\mu)}{n + \kappa} + \frac{n^2\bar{y}^2 + \kappa n\bar{y}^2 + n\kappa\mu^2+ \kappa^2\mu^2}{n+\kappa} +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 + \frac{(-n^2\bar{y}^2 - \kappa^2\mu^2 - 2n\bar{y}\kappa\mu)}{n + \kappa} + \frac{n^2\bar{y}^2 + \kappa n\bar{y}^2 + n\kappa\mu^2+ \kappa^2\mu^2}{n+\kappa} +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 + \frac{( - \kappa^2\mu^2 - 2n\bar{y}\kappa\mu + \kappa n\bar{y}^2 + n\kappa\mu^2)}{n + \kappa} +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 + \frac{n\kappa( - \kappa\mu^2 - 2\bar{y}\mu + \bar{y}^2 + \mu^2)}{n + \kappa} +  S_y + \eta \big) \}\\
+& = \omega^{( \frac{n + d + 1}{2} - 1)} \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2 + \frac{-n\kappa^2\mu^2 \cdot n\kappa( \bar{y} - \mu)^2}{n + \kappa} +  S_y + \eta \big) \}\\
+\end{split} \end{equation}
+So we have 
+$$p( \theta, \omega | \textbf{y})  \propto \omega^{( \frac{n + d + 1}{2} - 1)}  \cdot exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2\} \cdot exp\{ -\frac{\omega}{2}(\frac{-n\kappa^2\mu^2 \cdot n\kappa( \bar{y} - \mu)^2}{n + \kappa} +  S_y + \eta) \}$$
+which has the form of the normal-gamma
+$$ p(\theta, \omega | \textbf{y}) \propto \omega^{(d^*+1)/2 - 1}exp\{ -\omega \cdot \frac{\kappa^*(\theta - \mu^*)^2}{2}\}exp\{-\omega \cdot \frac{\eta^*}{2}\}$$
+From this form of the posterior, the new updated parameters are 
+\begin{itemize}\item $\mu \rightarrow \mu^* =  \frac{n\bar{y} + \kappa\mu}{n + \kappa}$
+\item $\kappa \rightarrow \kappa^* = n + \kappa$  AND $d \rightarrow d^* = n + d$  
+\item $\eta \rightarrow \eta^* = \frac{-n\kappa^2\mu^2 \cdot n\kappa( \bar{y} - \mu)^2}{n + \kappa} +  S_y + \eta$
+\end{itemize}
+
+%commented out
+\iffalseYou may notice that my parameterization of the normal-gamma in Equation 2 differs from, say, the one you might find in textbooks or on websites. I've chosen this parameterization in order to make these four updates for the parameters, above, as simple-looking and intuitive as possible.Tip: this one is a bit of an algebra slog, with a lot of completing the square, collecting common terms, and cancelling positives with negatives. For example, to make the calculations go more easily, you might first show (or recall, from a previous exercise) that the likelihood can be written in the form
+$$ p(\textbf{y} | \theta, \omega) \propto \omega^{n/2}exp\{ -\omega \cdot ( \frac{S_y + n(\bar{y} - \theta)^2}{2} ) \} $$
+where $S_y = \Sigma_{i=1}^n (y_i - \bar{y} )^2$ is the sum of squares for the \textbf{y} vector.\\This expresses the likelihood in terms of the two statistics $\bar{y}$ and $S_y$, which you may recall from your math-stat course are sufficient statistics for $(\theta, \sigma^2)$. Take care in ignoring constants here: some term that is constant in $\theta$ may not be constant in $\omega$, and vice versa.
+\fi
+
+\item From the joint posterior just derived, what is the conditional posterior distribution $p(\theta | \textbf{y}, \omega)$? \\
+- you can read it off directly from the joint distribution, since you took care to set up things so that the joint posterior was in the same form as Equation 2.
+\par* normal - gamma (normal sampling model with gamma prior on precision) from Eq 2: 
+$$p(\theta, \omega) \propto \omega^{\frac{d+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2} \big) \cdot exp\big( -\omega \cdot \frac{\eta}{2}\big) $$
+In general $p(\theta, \omega) \propto p(\omega) p(\theta | \omega)$\\
+and $p(\omega) = \omega^{\frac{d+1}{2} - 1 } \cdot \big( -\omega \cdot \frac{\eta}{2}\big)$
+and $p(\theta | \omega) = exp\big( -\omega \frac{\kappa(\theta - \mu)^2}{2}\big) $\\
+Thus reading off from B,  $$p(\theta | \textbf{y}, \omega) \propto exp\{ -\frac{\omega}{2}  \big( (n + \kappa)( \theta - \frac{n\bar{y} + \kappa\mu}{n + \kappa})^2\}$$
+This is the Normal distribution form,  $p(\theta | \textbf{y}, \omega) \sim N(\frac{n\bar{y} + \kappa\mu}{n + \kappa}, -\omega(n + \kappa))$
+
+
+
+\item  From the joint posterior calculated in (B), what is the marginal posterior distribution $p(\omega | y)$? \\ 
+- Unlike the previous question, where you could just read it off, here you have to integrate over $\theta$. Ignore constants not depending on $\omega$ in calculating this integral.
+\begin{equation} \begin{split}
+p(\omega | y) & = \int p(\theta,\omega | y) d\theta \\
+& \propto \int \omega^{(d^*+1)/2 - 1}exp\{ -\omega \cdot \frac{\kappa^*(\theta - \mu^*)^2}{2}\}exp\{-\omega \cdot \frac{\eta^*}{2}\} d\theta \\
+\end{split} \end{equation}
+
 \end{enumerate}
 
 \clearpage
