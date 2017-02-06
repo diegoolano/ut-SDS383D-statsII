@@ -137,6 +137,8 @@ In the case for a gamma distribution the leading constant for the pdf is \\$\fra
 Since we only care about the value of the equation with respect to $\theta$, \\we can treat the first part of the equation as constant
 \begin{equation} \begin{split}
 & = ( 1 + \frac{\kappa(\theta - \mu)^2}{n})^{-\frac{d+1}{2}} \\
+& = ( 1 + \frac{d}{d} \cdot \frac{\kappa(\theta - \mu)^2}{n})^{-\frac{d+1}{2}} \\
+& = ( 1 + \frac{1}{d} \cdot \frac{\kappa(\theta - \mu)^2}{nd/k})^{-\frac{d+1}{2}} \\
 \end{split} \end{equation}
 This is close to the form of our solution, $$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
 Thus set $d = v$, $\mu = m$ and set $n = s^2 \cdot v$ to get the centered, scaled t-student form.
