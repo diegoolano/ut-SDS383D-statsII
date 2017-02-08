@@ -236,34 +236,34 @@ This is the kernel for the gamma distribution, $Gamma(\frac{d^*}{2} , \frac{\eta
 $$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
 with center $m$, scale $s$, and degrees of freedom $v$ ( fill in the blank for $m$, $s^2$, and $v$ ). 
 express the parameters of this t distribution in terms of the four parameters of the normal-gamma posterior for $(\theta, \omega)$. Note: since you've set up the normal-gamma family in this careful conjugate form, this should require no extra work. It's just part (A), except for the prior rather than the posterior.
+
 \begin{equation} \begin{split}
-p(\theta) & = \int p(\theta, \textbf{y}) d\textbf{y} \\
-& \propto \int  \textbf{y}^{\frac{d+1}{2} - 1 } \cdot exp\big( -\textbf{y} \frac{\kappa(\theta - \mu)^2}{2} \big)  \cdot exp\big( -\textbf{y} \cdot \frac{\eta}{2}\big)\\
-& = \int \textbf{y}^{\frac{d+1}{2} - 1 } \cdot exp\big(  \frac{\textbf{y}\kappa(\theta - \mu)^2 + -\textbf{y}\eta}{2}\big) \\
-& = \int \textbf{y}^{( \frac{d+1}{2} - 1) } \cdot exp\big(  -\textbf{y} ( \frac{\kappa(\theta - \mu)^2 + \eta}{2} )\big) \\
+p(\theta) & = \int p(\theta, \omega | \textbf{y}) d\omega \\
+& \propto \int  \omega^{\frac{d^*+1}{2} - 1 } \cdot exp\big( -\omega \frac{\kappa^*(\theta - \mu^*)^2}{2} \big)  \cdot exp\big( -\omega \cdot \frac{\eta^*}{2}\big) d\omega \\
 \end{split} \end{equation}
 
-This is the kernel for gamma(a,b) for $a = \frac{d + 1}{2}$ and $b = \frac{\kappa(\theta - \mu)^2 + \eta}{2} $\\ As a probability distribution, it must integrate to 1/c where c is a constant, in this case that for the gamma distribution pdf, $c = \frac{b^a}{\Gamma(a)}$ thus $1/c  =   \frac{\Gamma(a)}{b^a}$ so we can rewrite (1) as:
+This is the kernel for gamma(a,b) for $a = \frac{d^* + 1}{2}$ and $b = \frac{\kappa^*(\theta - \mu^*)^2 + \eta^*}{2} $\\ As a probability distribution, it must integrate to 1/c where c is a constant, in this case that for the gamma distribution pdf, $c = \frac{b^a}{\Gamma(a)}$ thus $1/c  =   \frac{\Gamma(a)}{b^a}$ so we can rewrite (1) as:
+
 \begin{equation} \begin{split}
-& = \Gamma(\frac{d+1}{2})( \frac{\kappa(\theta - \mu)^2 + \eta}{2} )^{-\frac{d+1}{2}} \\
-& \propto ( \frac{\kappa(\theta - \mu)^2 + \eta}{2} )^{-\frac{d+1}{2}} \\
-& = ( \frac{\eta}{2} + \frac{\kappa(\theta - \mu)^2}{2} )^{-\frac{d+1}{2}} \\
-& = \big(\frac{\eta}{2} \cdot ( 1 + \frac{\kappa(\theta - \mu)^2}{\eta}) \big)^{-\frac{d+1}{2}} \\
-& = \frac{\eta}{2}^{-\frac{d+1}{2}} \cdot ( 1 + \frac{\kappa(\theta - \mu)^2}{\eta})^{-\frac{d+1}{2}} \\
+& = \Gamma(\frac{d+1}{2})( \frac{\kappa^*(\theta - \mu^*)^2 + \eta^*}{2} )^{-\frac{d^*+1}{2}} \\
+& \propto ( \frac{\kappa^*(\theta - \mu^*)^2 + \eta}{2} )^{-\frac{d^*+1}{2}} \\
+& = ( \frac{\eta^*}{2} + \frac{\kappa^*(\theta - \mu^*)^2}{2} )^{-\frac{d^*+1}{2}} \\
+& = \big(\frac{\eta^*}{2} \cdot ( 1 + \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*}) \big)^{-\frac{d^*+1}{2}} \\
+& = \frac{\eta^*}{2}^{-\frac{d^*+1}{2}} \cdot ( 1 + \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*})^{-\frac{d^*+1}{2}} \\
 \end{split} \end{equation}
 Since we only care about the value of the equation with respect to $\theta$, \\we can treat the first part of the equation as constant
 \begin{equation} \begin{split}
-& = ( 1 + \frac{\kappa(\theta - \mu)^2}{\eta})^{-\frac{d+1}{2}} \\
-& = ( 1 + \frac{d}{d} \cdot \frac{\kappa(\theta - \mu)^2}{\eta})^{-\frac{d+1}{2}} \\
-& = ( 1 + \frac{1}{d} \cdot \frac{(\theta - \mu)^2}{\eta d/\kappa})^{-\frac{d+1}{2}} \\
+& = ( 1 + \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*})^{-\frac{d^*+1}{2}} \\
+& = ( 1 + \frac{d^*}{d^*} \cdot \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*})^{-\frac{d^*+1}{2}} \\
+& = ( 1 + \frac{1}{d^*} \cdot \frac{(\theta - \mu^*)^2}{\eta^* d^*/\kappa^*})^{-\frac{d^*+1}{2}} \\
 \end{split} \end{equation}
 This is close to the form of our solution, $p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$\\
-Thus set $v = d$, $m = \mu$ and set $s^2 = \eta d/\kappa$ to get the centered, scaled t-student form.
+Thus set $v = d^*$, $m = \mu^*$ and set $s^2 = \eta^* d^*/\kappa^*$ to get the centered, scaled t-student form.
 
 
-\item \textit{True or false}: in the limit as the prior parameters $\kappa$, $d$, and $\eta$ approach zero, \\the priors $p(\theta)$ and $p(\omega)$ are valid probability distributions.\\  - \textit{a valid probability distribution must integrate to 1 (or something finite, so that it can normalized to integrate to 1) over its domain}.
+\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the priors $p(\theta)$ and $p(\omega)$ are valid probability distributions.\\  - \textit{a valid probability distribution must integrate to 1 (or something finite, so that it can normalized to integrate to 1) over its domain}.
 
-\item \textit{True or false}: in the limit as the prior parameters $\kappa$, $d$, and $\eta$ approach zero, \\the posteriors $p(\theta | \textbf{y})$ and $p(\omega | \textbf{y})$ are valid probability distributions.\item Your result in (F) implies that a Bayesian credible interval for $\theta$ takes the form 
+\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the posteriors $p(\theta | \textbf{y})$ and $p(\omega | \textbf{y})$ are valid probability distributions.\item Your result in (F) implies that a Bayesian credible interval for $\theta$ takes the form 
 $$ \theta \in m \pm t^* \cdot s ,$$ where $m$ and $s$ are the posterior center and scale parameters from (F), \\and $t^*$ is the appropriate critical value of the t distribution for your coverage level and degrees of freedom (e.g. it would be 1.96 for a 95\% interval under the normal distribution).\\ \\
 \textit{True or false}: In the limit as the prior parameters $\kappa$, $d$, and $\eta$ approach zero, \\the Bayesian credible interval for $\theta$ becomes identical to the classical (frequentist) confidence interval for $\theta$ at the same confidence level.
 
