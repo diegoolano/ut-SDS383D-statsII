@@ -232,6 +232,8 @@ The integral here is a Normal kernel: $N (\mu^*, \omega\kappa^*)$ and as a proba
 \end{split} \end{equation}
 This is the kernel for the gamma distribution, $Gamma(\frac{d^*}{2} , \frac{\eta^*}{2})$ as seen in Eq 2.
 
+
+
 \item From (C) and (D), we know that the marginal posterior distribution $p(\theta | \textbf{y})$ is a gamma mixture of normals. Show that this takes the form of a centered, scaled t distribution:
 $$p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$$
 with center $m$, scale $s$, and degrees of freedom $v$ ( fill in the blank for $m$, $s^2$, and $v$ ). 
@@ -255,18 +257,104 @@ Since we only care about the value of the equation with respect to $\theta$, \\w
 \begin{equation} \begin{split}
 & = ( 1 + \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*})^{-\frac{d^*+1}{2}} \\
 & = ( 1 + \frac{d^*}{d^*} \cdot \frac{\kappa^*(\theta - \mu^*)^2}{\eta^*})^{-\frac{d^*+1}{2}} \\
-& = ( 1 + \frac{1}{d^*} \cdot \frac{(\theta - \mu^*)^2}{\eta^* d^*/\kappa^*})^{-\frac{d^*+1}{2}} \\
+& = ( 1 + \frac{1}{d^*} \cdot \frac{(\theta - \mu^*)^2}{\frac{\eta^*}{d^*\kappa^*}})^{-\frac{d^*+1}{2}} \\
 \end{split} \end{equation}
 This is close to the form of our solution, $p(\theta) \propto \big( 1 + \frac{1}{v} \cdot \frac{(x-m)^2}{s^2}\big)^{-\frac{v+1}{2}}$\\
-Thus set $v = d^*$, $m = \mu^*$ and set $s^2 = \eta^* d^*/\kappa^*$ to get the centered, scaled t-student form.
+Thus set $v = d^*$, $m = \mu^*$ and set $s^2 = \frac{\eta^*}{d^*\kappa^*}$ to get the centered, scaled t-student form.
 
 
-\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the priors $p(\theta)$ and $p(\omega)$ are valid probability distributions.\\  - \textit{a valid probability distribution must integrate to 1 (or something finite, so that it can normalized to integrate to 1) over its domain}.
+\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the priors $p(\theta)$ and $p(\omega)$ are valid probability distributions.
+\\  - \textit{a valid probability distribution must integrate to 1 (or something finite, so that it can normalized to integrate to 1) over its domain}.
+$$ p(\omega) = \frac{(\frac{\eta}{2})^{\frac{1}{2}}}{\Gamma(\frac{d}{2})} \omega^{\frac{d}{2} - 1} \cdot exp^{-\frac{\eta}{2}\omega}$$
+For the $\omega$ factor, in the left part of the RHS, \\as $d, \eta \rightarrow 0$, $\omega^{\frac{d}{2} - 1}$ approaches $\frac{1}{\omega}$ and its scalar $ \frac{(\frac{\eta}{2})^{\frac{1}{2}}}{\Gamma(\frac{d}{2})} $ approaches $\frac{0}{\Gamma(0)} = \frac{0}{\infty}$ which is ill defined, hence $p(\omega)$ is not a valid probability distribution.  
 
-\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the posteriors $p(\theta | \textbf{y})$ and $p(\omega | \textbf{y})$ are valid probability distributions.\item Your result in (F) implies that a Bayesian credible interval for $\theta$ takes the form 
+\item \textit{True or false}: in the limit as the prior parameters [ $\kappa$, $d$, and $\eta$ ] approach zero, \\the posteriors $p(\theta | \textbf{y})$ and $p(\omega | \textbf{y})$ are valid probability distributions.
+
+From (E) we have,
+$$p(\theta | \textbf{y} ) = ( 1 + \frac{1}{d^*} \cdot \frac{(\theta - \mu^*)^2}{\frac{\eta^*}{d^*\kappa^*}})^{-\frac{d^*+1}{2}} $$
+where the posterior parameters are 
+\begin{itemize}
+\item $\mu \rightarrow \mu^* =  \frac{n\bar{y} + \kappa\mu}{n + \kappa}$
+\item $\kappa \rightarrow \kappa^* = n + \kappa$ 
+\item $d \rightarrow d^* = n + d$  
+\item $\eta \rightarrow \eta^* = \frac{ n\kappa( \bar{y} - \mu)^2}{n + \kappa} +  S_y + \eta$
+\end{itemize}
+As these posteriors $\rightarrow 0$,  
+\begin{itemize}
+\item $ \mu^* =  \frac{n\bar{y} + \kappa\mu}{n + \kappa} \rightarrow \frac{n\bar{y} + (0)\mu}{n + (0)} = \frac{n\bar{y}}{n} = \bar{y}$
+\item $\kappa^* = n + \kappa \rightarrow n + (0) = n$ 
+\item $d^* = n + d \rightarrow n + (0) = n$  
+\item $\eta^* = \frac{ n\kappa( \bar{y} - \mu)^2}{n + \kappa} +  S_y + \eta \rightarrow 0 + S_y + 0 = S_y$
+\end{itemize}
+Thus plugging into $p(\theta | \textbf{y} )$ above we get
+$$ ( 1 + \frac{1}{n} \cdot \frac{(\theta - \bar{y})^2}{\frac{S_y}{n^2}})^{-\frac{n+1}{2}} $$
+which is a valid probability distribution with the form of the centered, scaled t distribution, with parameters
+\begin{itemize}
+\item $ m = \bar{y}$
+\item $ v = n$ 
+\item $s^2 = \frac{S_y}{n^2}$
+\end{itemize}
+
+From (D) we have,
+$$p(\omega | \textbf{y}) = \omega^{\frac{d^*}{2} - 1} \cdot exp\{-\omega \cdot \frac{\eta^*}{2}\}  $$
+plugging in the posterior variables here we get
+$$ p(\omega | \textbf{y}) = \omega^{\frac{n}{2} - 1} \cdot exp\{-\omega \cdot \frac{S_y}{2}\}  $$
+which is a valid gamma distribution,  $Gamma(\frac{n}{2}, \frac{S_y}{2})$ \\
+
+\item Your result in (E) implies that a Bayesian credible interval for $\theta$ takes the form 
 $$ \theta \in m \pm t^* \cdot s ,$$ where $m$ and $s$ are the posterior center and scale parameters from (F), \\and $t^*$ is the appropriate critical value of the t distribution for your coverage level and degrees of freedom (e.g. it would be 1.96 for a 95\% interval under the normal distribution).\\ \\
 \textit{True or false}: In the limit as the prior parameters $\kappa$, $d$, and $\eta$ approach zero, \\the Bayesian credible interval for $\theta$ becomes identical to the classical (frequentist) confidence interval for $\theta$ at the same confidence level.
+\end{enumerate}
 
+\problem{The conjugate Gaussian linear model}
+
+Now consider the Gaussian linear model,\\$( \textbf{y} | B, \sigma^2) \sim N(XB, (\omega\Lambda)^{-1}),$ \\where: 
+\begin{itemize}
+\item $\textbf{y}$ is an n vector of responses, 
+\item $X$ is an $n x p$ matrix of features, 
+\item $\omega$ = $1/\sigma^2$ is the error precision, and 
+\item $\Lambda$ is some known matrix. 
+\end{itemize}
+A typical setup would be $\Lambda = I$, the $n x n$ identity matrix, so that the residuals of the model are i.i.d. normal with variance $\sigma^2$. But we'll consider other setups as well, so we'll leave a generic $\Lambda$ matrix in the sampling model for now.  Note that when we write the model this way, we typically assume one of two things: either \par(1) that both the y variable and all the X variables have been centered to have mean zero, so that an intercept is unnecessary; or \par(2) that X has a vector of 1's as its first column, so the first entry in $B$ is actually the intercept.\\We'll again work in terms of the precision $\omega = \sigma^2$, and consider a normal-gamma prior for $B$:
+
+\begin{equation} \begin{split}
+(B | \omega) \sim N(m,(\omega K)^{-1}) 
+\end{split}\end{equation}
+\begin{equation} \begin{split}
+\omega \sim Gamma(d/2, \eta/2) 
+\end{split}\end{equation}Here $K$ is a $p x p$ precision matrix in the multivariate normal prior for $B$, assumed to be known.\\The items below follow a parallel path to the derivations you did for the Gaussian location model - except for the multivariate case. Don't reinvent the wheel if you don?t have to: you should be relying heavily on your previous results about the multivariate normal distribution.   That is, if you find yourself completing the square over and over again with matrices and vectors, you should stop and revisit your Exercises 1 solutions.\\
+
+\textit{Basics}
+\begin{enumerate}[label=(\Alph*)]
+\item Derive the conditional posterior $p(B | \textbf{y}, \omega)$.
+
+\item Derive the marginal posterior $p(\omega | \textbf{y})$
+
+\item Putting these together, derive the marginal posterior $p(B |  \textbf{y} )$.
+
+\item Take a look at the data in "gdpgrowth.csv" from the class website, which has macroeconomic variables for several dozen countries. In particular, consider a linear model (with intercept) for a country?s GDP growth rate (GR6096) versus its level of defense spending as a fraction of its GDP (DEF60). \\Fit the Bayesian linear model to this data set, choosing $\Lambda = I$ and something diagonal and pretty vague for the prior precision matrix $K = diag(\kappa_1, \kappa_2)$. Inspect the fitted line (graphically). Are you happy with the fit? Why or why not?
+
+\end{enumerate}
+
+\textit{A heavy-tailed error model} \\
+Now it's time for your first "real" use of the hierarchical modeling formalism to do something cool. Here's the full model you'll be working with:
+\begin{equation} \begin{split}
+(\textbf{y}  |  B, \omega, \Lambda) \sim N(XB, (\omega \Lambda)^{-1})\\
+\Lambda = diag(\lambda_1, . . . , \lambda_n) \\
+\lambda_i \stackrel{iid}{\sim} Gamma(h/2, h/2) \\
+( B | \omega ) \sim N(m, (\omega K)^{-1} \\
+\omega \sim Gamma(d/2, \eta/2 )
+\end{split}\end{equation}
+where $h$ is a fixed hyper parameter. \\
+\begin{enumerate}[label=(\Alph*)]\item Under this model, what is the implied conditional distribution $p(y_i | X, B, \omega)$? Notice that li has been marginalized out. This should look familiar.
+
+\item What is the conditional posterior distribution $p(\lambda_i | \textbf{y}, B, \omega)$?
+
+\item Combining these results with those from the "Basics" subsection above, code up a Gibbs sampler that repeatedly cycles through sampling the following three sets of conditional distributions.
+\begin{itemize}\item $p(B | \textbf{y},\omega,\Lambda)$ 
+\item $p(\omega | \textbf{y}, \Lambda)$\item $p(\lambda_i | \textbf{y}, B,\omega)$
+\end{itemize}The first two should follow identically from previous results, except that we are explicitly conditioning on $\Lambda$, which is now a random variable rather than a fixed hyperparameter. \\ \\
+If you cycle through these conditional posterior draws a few thousand times, you will build up a \textbf{Markov-chain Monte Carlo (MCMC)} sample \\from the joint posterior distribution $p(B, \omega, \Lambda | \textbf{y})$. \\ \\Now use your Gibbs sampler (with at least a few thousand draws) to fit this model to the GDP growth rate data for an appropriate choice of $h$. Are you happier with the fit? What's going on here (i.e. what makes the model more or less appropriate for the data)?  An interesting plot will be the posterior mean of $1/\lambda_i$ for each country.
 \end{enumerate}
 \clearpage
 
