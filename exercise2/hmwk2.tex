@@ -313,7 +313,7 @@ $$ \theta \in m \pm t^* \cdot s ,$$ where $m$ and $s$ are the posterior center a
 \problem{The conjugate Gaussian linear model}
 
 Now consider the Gaussian linear model,\\
-$( \textbf{y} | B, \sigma^2) \sim N(XB, (\omega\Lambda)^{-1}),$ \\where: 
+$$( \textbf{y} | B, \sigma^2) \sim N(XB, (\omega\Lambda)^{-1}),$$ where: 
 \begin{itemize}
 \item $\textbf{y}$ is an n vector of responses, 
 \item $X$ is an $n x p$ matrix of features, 
@@ -334,41 +334,142 @@ The items below follow a parallel path to the derivations you did for the Gaussi
 
 \textit{Basics}
 \begin{enumerate}[label=(\Alph*)]
-\item Derive the conditional posterior $p(B | \textbf{y}, \omega)$.
+\item Derive the conditional posterior $p(B | \textbf{y}, \omega)$.\\
+Given $(y | \beta, \omega) \sim N(X\beta, (\omega \Lambda)^{-1})$ 
+and priors for $(B | \omega)$ and $\omega$, we may write:
+\begin{equation} \begin{split}
+p(\beta, \omega | y) &\propto p(y | \beta, \omega) \cdot p(\beta, \omega) \\
+&= p(y | \beta, \omega) \cdot p(\beta|\omega) \cdot p(\omega) \\
+&= \overbrace{( \omega^{n/2} \exp[ -\frac{1}{2}(y-X\beta)^T\omega\Lambda(y-X\beta) ] )}^\text{(i)} \overbrace{( \omega^{p/2} \exp [ -\frac{1}{2} (\beta - m)^T\omega K (\beta - m)])}^\text{(ii)} \overbrace{( \omega^{d/2-1} \exp[ -\frac{\eta}{2}] )}^\text{(iii)} \\
+&= \omega^{(d + p + n)/2 - 1} \exp\left( -\frac{1}{2}\omega \left[ (y-X\beta)^T\Lambda(y-X\beta) + (\beta-m)^TK(\beta-m) + \eta \right] \right) \\
+\end{split}\end{equation}
 
-\item Derive the marginal posterior $p(\omega | \textbf{y})$
+Focusing on second exp term we get: \\
+$\exp\left( -\frac{1}{2}\omega \left[ (y^T- \beta^T X^T)(\Lambda y -\Lambda X\beta) + (\beta^T -m^T)(K\beta - Km) + \eta \right] \right)$\\
+$\exp\left( -\frac{1}{2}\omega \left[ (y^T\Lambda y - \beta^TX^T\Lambda y - y^T\Lambda X\beta + \beta^TX^T\Lambda X\beta) +   (\beta^TK\beta -m^TK\beta - \beta^TKm + m^TKm) + \eta \right] \right)$ \\
+$\exp\left( -\frac{1}{2}\omega \left[ y^T\Lambda y - 2y^T\Lambda X\beta + \beta^TX^T\Lambda X\beta + \beta^TK\beta - 2m^TK\beta + m^TKm  + \eta \right] \right)$ \\
+$\exp( -\frac{1}{2} \omega \underbrace{\left[ \beta^T(X^T\Lambda X + K)\beta - 2(y^T\Lambda X + m^T K)\beta + y^T\Lambda y + m^TKm  + \eta  \right]}_\text{(iv)})$\\		
+Now (16) is
+$$\omega^{(d + p + n)/2 - 1} \exp \left( -\frac{1}{2} \omega \left[ \beta^T(X^T\Lambda X + K)\beta - 2(y^T\Lambda X + m^T K)\beta + y^T\Lambda y + m^TKm  + \eta  \right]\right)$$
+And we let, 
+\begin{itemize}
+\item $A = X^T\Lambda X + K$
+\item $b^T = y^T\Lambda X + m^T K \Rightarrow b = X^T \Lambda y + Km$
+\item $c = y^T\Lambda y + m^TKm + \eta$
+\end{itemize}
+	and the expression in (iv) once the square is completed becomes, 
+	\begin{equation} \begin{split}
+		\beta^T A \beta - 2b^T \beta + c &= \beta^T A \beta - 2b^T \beta +  b^TA^{-1}b - b^TA^{-1}b + c \\
+		&= (\beta - A^{-1}b)^T A (\beta - A^{-1}b) - b^TA^{-1}b + c,
+	\end{split}\end{equation}
+	Now let 
+	\begin{equation} \begin{split}
+		m^\star &= A^{-1}b = (X^T\Lambda X + K)^{-1}(X^T \Lambda y + Km) \\
+		K^\star &= A = X^T\Lambda X + K,
+	\end{split}\end{equation}
+	and we can also simplify the term
+	\begin{equation} \begin{split}
+		b^T A^{-1}b &= b^T I A^{-1} \\
+		&= b^T A^{-1} A A^{-1} b \\
+		&= m^{\star T} K^\star m^\star,
+	\end{split}\end{equation}
+	and finally let
+	\begin{equation} \begin{split}
+		\eta^\star &= c - m^{\star T} K^\star m^\star \\
+		&= \eta + y^T\Lambda y + m^TKm - m^{\star T} K^\star m^\star
+	\end{split}\end{equation}
+	We can at last express (iv) as 
+	$$(\beta - m^\star)^TK^\star(\beta - m^\star) + \eta^\star. $$
+	Now the joint posterior distribution may be written as 
+	\begin{equation} \begin{split}
+		p(\beta, \omega | y) &\propto \omega^{(d + p + n)/2 - 1} \exp \left( -\frac{1}{2} \omega \left[  (\beta - m^\star)^TK^\star(\beta - m^\star) + \eta^\star \right] \right) \\
+		&= \underbrace{\omega^{p/2} \exp \left[ -\frac{1}{2} (\beta - m^\star)^T \omega K^\star(\beta - m^\star)  \right]}_\text{$p(\beta | y, \omega) \sim N(m^*, (\omega K^\star)^{-1})$} \underbrace{\omega^{d^\star/2 - 1} \exp \left[ -\frac{1}{2} \eta^\star \omega \right]}_\text{$p(\omega | y) \sim \text{Gamma}\left( \frac{d^\star}{2}, \frac{\eta^\star}{2} \right)$},\\
+	\end{split}\end{equation}
+	with 
+	\begin{equation} \begin{split}
+		m^\star &= (X^T\Lambda X + K)^{-1}(X^T \Lambda y + Km) \\
+		K^\star &= X^T\Lambda X + K \\
+		\eta^\star &= \eta + y^T\Lambda y + m^TKm - m^{\star T} K^\star m^\star \\
+		d^\star &= d + n
+	\end{split}\end{equation}
 
-\item Putting these together, derive the marginal posterior $p(B |  \textbf{y} )$.
+%how does - \beta^TX^T\Lambda y - y^T\Lambda X\beta  = 2y^T\Lambda X\beta  ???
+
+\item Derive the marginal posterior $p(\omega | \textbf{y})$ \\
+$p(\omega | y) \sim \text{Gamma}\left( \frac{d^\star}{2}, \frac{\eta^\star}{2} \right)$
+
+\item Putting these together, derive the marginal posterior $p(B |  \textbf{y} )$.	
+	The marginal posterior for $\beta$ may be found with 
+	\begin{equation} \begin{split}
+		p(\beta | y) &= \int_{0}^{\infty} p(\beta, \omega | y) d\omega \\
+		&\propto \int_0^{\infty} \omega^{(d + p + n)/2 - 1} \exp \left( -\frac{1}{2} \omega \left[  (\beta - m^\star)^TK^\star(\beta - m^\star) + \eta^\star \right] \right) d\omega \\
+		&\propto \left[ \frac{1}{2}  \left[  (\beta - m^\star)^TK^\star(\beta - m^\star) + \eta^\star \right] \right)^{-\frac{d+p+n}{2}} \\
+		&\propto \left[ 1 + (\beta - m^\star)^T \frac{K^\star}{\eta^\star} (\beta - m^\star) \right]^{-\frac{d+n+p}{2}} \\
+		&\propto \left[ 1 + \frac{1}{d+n} \cdot (\beta - m^\star)^T \cdot \frac{d+n}{\eta^\star}K^\star \cdot (\beta - m^\star) \right]^{-\frac{d+n+p}{2}},
+	\end{split}\end{equation}
+	which a Student's $t$-distribution with $d + n$ degrees of freedom, mean vector $m^\star$, and covariance matrix $\frac{d+n}{\eta^\star}K^\star$.
+
 
 \item Take a look at the data in "gdpgrowth.csv" from the class website, which has macroeconomic variables for several dozen countries. In particular, consider a linear model (with intercept) for a country?s GDP growth rate (GR6096) versus its level of defense spending as a fraction of its GDP (DEF60). \\
-Fit the Bayesian linear model to this data set, choosing $\Lambda = I$ and something diagonal and pretty vague for the prior precision matrix $K = diag(\kappa_1, \kappa_2)$. Inspect the fitted line (graphically). Are you happy with the fit? Why or why not?
-
+Fit the Bayesian linear model to this data set, choosing $\Lambda = I$ and something diagonal and pretty vague for the prior precision matrix $K = diag(\kappa_1, \kappa_2)$. Inspect the fitted line (graphically). Are you happy with the fit? Why or why not?\\ 
+\textbf{see exercises2/Ex2Dbayes-gdpgrowth-R}
 \end{enumerate}
 
 \textit{A heavy-tailed error model} \\
-Now it's time for your first "real" use of the hierarchical modeling formalism to do something cool. Here's the full model you'll be working with:
+\par Now it's time for your first "real" use of the hierarchical modeling formalism to do something cool. Here's the full model you'll be working with:
 \begin{equation} \begin{split}
-(\textbf{y}  |  B, \omega, \Lambda) \sim N(XB, (\omega \Lambda)^{-1})\\
+(\textbf{y}  |  \beta, \omega, \Lambda) \sim N(X\beta, (\omega \Lambda)^{-1})\\
 \Lambda = diag(\lambda_1, . . . , \lambda_n) \\
 \lambda_i \stackrel{iid}{\sim} Gamma(h/2, h/2) \\
-( B | \omega ) \sim N(m, (\omega K)^{-1} \\
+( \beta | \omega ) \sim N(m, (\omega K)^{-1} \\
 \omega \sim Gamma(d/2, \eta/2 )
 \end{split}\end{equation}
 where $h$ is a fixed hyper parameter. \\
 \begin{enumerate}[label=(\Alph*)]
-\item Under this model, what is the implied conditional distribution $p(y_i | X, B, \omega)$? Notice that li has been marginalized out. This should look familiar.
+\item Under this model, what is the implied conditional distribution $p(y_i | X, \beta, \omega)$? 
+\\Notice that $\lambda_i$ has been marginalized out. This should look familiar.
+%&\propto \underbrace{p(y_i | X, \beta, \omega, \lambda_i)}_\text{likelihood}  \cdot \underbrace{p(\lambda_i)}_\text{prior} d\lambda_i\\
+\begin{equation} \begin{split}
+p(y_i | X, \beta, \omega) &= \int p(y_i | X, \beta, \omega, \lambda_i) \cdot p(\lambda_i) d\lambda_i\\
+&\propto \int \underbrace{ (\omega \lambda_i)^{1/2} exp\left[ \frac{-\omega \lambda_i}{2} \cdot (y_i - x_i^T\beta)^2 \right]}_\text{ $p(y_i | X, \beta, \omega, \lambda_i)$} \cdot \underbrace{\lambda_i^{h/2 -1 } exp[ -\frac{h}{2} \lambda_i ] }_\text{$p(y_i)$} d\lambda_i\\
+&= \int \lambda_i^{(h+1)/2 - 1} \exp \left[ -\frac{1}{2} \left( \omega (y_i - x_i^T \beta)^2 + h \right) \lambda_i \right] d\lambda_i \\
+&\propto \left[ \frac{1}{2} \left( \omega (y_i - x_i^T \beta)^2 + h \right) \right]^{-(h+1)/2} \\
+&\propto \left[ 1 + \frac{1}{h} \cdot \frac{(y_i - x_i^T \beta)^2}{\omega^{-1}} \right]^{-(h+1)/2}, 
+\end{split}\end{equation}
+This has the form of the students t-distribution with mean $x_i^T\beta$ and scale $1/\omega$ thus \\ $$p(y_i | X, \beta, \omega) \sim t_n( x_i^T\beta, 1/\omega)$$
 
-\item What is the conditional posterior distribution $p(\lambda_i | \textbf{y}, B, \omega)$?
+
+\item What is the conditional posterior distribution $p(\lambda_i | \textbf{y}, \beta, \omega)$?\\
+\begin{equation} \begin{split}
+p(\lambda_i | \textbf{y}, B, \omega) &\propto p(\lambda_i, y_i, \beta, \omega)\\
+& = p(y_i | \lambda_i, \beta, \omega) \cdot p(\lambda_i, \beta, \omega) \\
+& = p(y_i | \lambda_i, \beta, \omega) \cdot p(\lambda_i | \beta, \omega) \cdot p(\beta,\omega)\\
+& \propto  p(y_i | \lambda_i, \beta, \omega) \cdot p(\lambda_i )\\
+\end{split}\end{equation}
+We calculated this in the first part of A, so we may write:
+\begin{equation} \begin{split}
+&\propto \lambda_i^{(h+1)/2 - 1} \exp \left[ -\frac{1}{2} \left( \omega (y_i - x_i^T \beta)^2 + h \right) \lambda_i \right] \\
+&\sim \text{Gamma}\left( \frac{h+1}{2}, \frac{h + \omega (y_i - x_i^T \beta)^2}{2} \right)
+\end{split}\end{equation}
+
 
 \item Combining these results with those from the "Basics" subsection above, code up a Gibbs sampler that repeatedly cycles through sampling the following three sets of conditional distributions.
 \begin{itemize}
-\item $p(B | \textbf{y},\omega,\Lambda)$ 
+\item $p(\beta | \textbf{y},\omega,\Lambda) $ 
 \item $p(\omega | \textbf{y}, \Lambda)$
-\item $p(\lambda_i | \textbf{y}, B,\omega)$
+\item $p(\lambda_i | \textbf{y}, \beta,\omega)$
 \end{itemize}
 The first two should follow identically from previous results, except that we are explicitly conditioning on $\Lambda$, which is now a random variable rather than a fixed hyperparameter. \\ \\
 If you cycle through these conditional posterior draws a few thousand times, you will build up a \textbf{Markov-chain Monte Carlo (MCMC)} sample \\from the joint posterior distribution $p(B, \omega, \Lambda | \textbf{y})$. \\ \\
 Now use your Gibbs sampler (with at least a few thousand draws) to fit this model to the GDP growth rate data for an appropriate choice of $h$. Are you happier with the fit? What's going on here (i.e. what makes the model more or less appropriate for the data)?  An interesting plot will be the posterior mean of $1/\lambda_i$ for each country.
+
+From our prior results we have,
+\begin{equation} \begin{split}
+p(\beta | \textbf{y},\omega,\Lambda) &\sim N(m^*, (\omega K^\star)^{-1}) \\
+p(\omega | \textbf{y}, \Lambda) & \sim \text{Gamma}\left( \frac{d^\star}{2}, \frac{\eta^\star}{2} \right) \\
+p(\lambda_i | \textbf{y}, \beta,\omega) & \sim \text{Gamma}\left( \frac{h+1}{2}, \frac{h + \omega (y_i - x_i^T \beta)^2}{2} \right) \\
+\end{split}\end{equation}
+
 \end{enumerate}
 \clearpage
 
