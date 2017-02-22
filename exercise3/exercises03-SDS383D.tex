@@ -219,6 +219,8 @@ where $h$ is the bandwidth.    Using this weighting function in a linear smoothe
 
 Write your own R function that will fit a kernel smoother for an arbitrary set of $x$-$y$ pairs, and arbitrary choice of (positive real) bandwidth $h$.\footnote{Coding tip: write things in a modular way.  A kernel function is a function accepting a distance and a bandwidth and returning a nonnegative real.  A weighting function is a function that accepts a vector of previous $x$'s, a new x, and a kernel function; and that returns a vector of weights.  Et cetera.  You will appreciate your foresight in writing modular code later in the course!}  Set up an R script that will simulate noisy data from some nonlinear function, $y = f(x) + \epsilon$; subtract the sample means from the simulated $x$ and $y$; and use your function to fit the kernel smoother for some choice of $h$.  Plot the estimated functions for a range of bandwidths large enough to yield noticeable changes in the qualitative behavior of the prediction functions.
 
+\textbf{See "exercises3\_curvefitting\_b.R"}
+
 \end{enumerate}
 
 \section{Cross validation}
@@ -229,6 +231,8 @@ Left unanswered so far in our previous study of kernel regression is the questio
 
 
 \item  Presumably a good choice of $h$ would be one that led to smaller predictive errors on fresh data.  Write a function or script that will: (1) accept an old (``training'') data set and a new (``testing'') data set as inputs; (2) fit the kernel-regression estimator to the training data for specified choices of $h$; and (3) return the estimated functions and the realized prediction error on the testing data for each value of $h$.  This should involve a fairly straightforward ``wrapper'' of the function you've already written.
+
+\textbf{See "exercise3/exercises3\_crossvalidation.R"}
 
 \item Imagine a conceptual two-by-two table for the unknown, true state of affairs.  The rows of the table are ``wiggly function'' and ``smooth function,'' and the columns are ``highly noisy observations'' and ``not so noisy observations.''  Simulate one data set (say, 500 points) for each of the four cells of this table, where the $x$'s take values in the unit interval.  Then split each data set into training and testing subsets.  You choose the functions.\footnote{Trigonometric functions, for example, can be pretty wiggly if you make the period small.}   Apply your method to each case, using the testing data to select a bandwidth parameter.  Choose the estimate that minimizes the average squared error in prediction, which estimates the mean-squared error:
 $$
