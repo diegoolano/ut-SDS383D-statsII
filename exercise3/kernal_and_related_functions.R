@@ -7,11 +7,12 @@ simulate_noisy_data = function(x,v,f){
   #    f is a nonlinear function
   #output: 
   #return function f(x) + e  where e is random normal noise
-  n = length(n)
+  n = length(x)
   e = rnorm(n,0,sqrt(v))
-  data = f(x)
-  noisy_data = data + e
-  return(noisy_data)
+  #data = f(x)
+  #noisy_data = data + e
+  #return(noisy_data)
+  return(y = f(x)+e)
 }
 
 linear_smoother = function(x,y,x_str,h=1,K){
@@ -30,6 +31,13 @@ linear_smoother = function(x,y,x_str,h=1,K){
     yhat[i] = t(w) %*% y         #equivalent to crossprod(w,y) , which equivalent to sum_{i=1}^n{w(x_i,x_st) * y_i} 
   }
   return(yhat)	
+}
+
+K_unif = function(x){
+  #Uniform kernel.
+  #inputs:  vector of x values.
+  #output:	vector of uniform smoothed x values. 
+  return(.5 * ifelse(abs(x)<=1,rep(1,length(x)),rep(0,length(x))))
 }
 
 K_gaus = function(x){
