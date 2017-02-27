@@ -191,6 +191,7 @@ $$ \hat{f}(x^{\star}) =  \sum_{i=1}^n w(x_i, x^{\star}) y_i   \, $$
 
 \par The linear smoother thus gives each $y_i$ a weight proportional to $x_i * x^{\star}$ and the sum of all x's.\\
 where the K-nn one gives each $y_i$ a weight proportional to the K nearest $x_i$ to $x^{\star}.$
+\\ the weight function for the linear smoother is influenced the most by bigger X, so those farthest from origin, and has nothing to do with how close they are to the x*
 \\
 \item A \textit{kernel function} $K(x)$ is a smooth function satisyfing
 $$
@@ -240,6 +241,8 @@ L_n(\hat{f}) = \frac{1}{n}\sum_{i=1}^{n^{\star}} (y^{\star}_i - \hat{y}_i^{\star
 $$
 where $(y_i^{\star}, x_i^{\star})$ are the points in the test set, and $ \hat{y}_i^{\star}$ is your predicted value arising from the model you fit using only the training data.  Does your out-of-sample predictive validation method lead to reasonable choices of $h$ for each case?
 
+\textbf{See "exercise3/exercises3\_crossvalidation.R" and figures "curve\_fitting\_b2 and b3"}
+
 \item (optional problem) Splitting a data set into two chunks to choose $h$ by out-of-sample validation has some drawbacks.  List at least two.  Then consider an alternative: leave-one-out cross validation.  Define
 $$
 \mbox{LOOCV} = \sum_{i=1}^n \left( y_i - \hat{y}_{i}^{(-i)} \right)^2 \, ,
@@ -281,6 +284,38 @@ $$
 where $w_i \equiv w(x_i, x)$ are the kernel weights defined just above, normalized to sum to one.\footnote{We are fitting a different polynomial function for every possible choice of $x$.  Thus $\hat{a}$ depends on the target point $x$, but we have suppressed this dependence for notational ease.} Derive a concise (matrix) form of the weight vector $\hat{a}$, and by extension, the local function estimate $\hat{f}(x)$ at the target value $x$.\footnote{Observe that at the target point $x$, $g_x(u = x; a) = a_0$.  That is, only the constant term appears.  But this is not the same thing as fitting only a constant term!}   Life will be easier if you define the matrix $R_x$ whose $(i,j)$ entry is $(x_i-x)^{j-1}$, and remember that (weighted) polynomial regression is the same thing as (weighted) linear regression with a polynomial basis.
 
 Note: if you get bogged down doing the general polynomial case, just try the linear case.
+\\
+\par First, by pluging in the definition of $g_x(x_i;a)$ into $\hat{a}$ we get
+\begin{equation} \begin{split}
+\hat{a} &= \arg \min_{R^{D+1}} \sum_{i=1}^n w_i \left\{ y_i -  ( a_0 + \sum_{k=1}^D a_k(x_i-x)^k )   \right\}^2 \\
+&= \arg \min_{R^{D+1}} \sum_{i=1}^n w_i \left\{ y_i -  ( \sum_{k=0}^D a_k(x_i-x)^k )   \right\}^2 \\
+\end{split}\end{equation}
+\par Now by substituting in $R_x$ for $(x_i - x)^k)$ and taking into account the definition for $R_x$ is based on $j-1$, we can  rewrite the following in matrix notation to get,
+$$ \hat{a} = \arg \min_{R^{D+1}} ( y - Ra)^T W (y - Ra) $$
+We minimize the function by taking the derivative with respect to a and solving for zero
+
+\begin{equation} \begin{split}
+0 &= \frac{d}{da}\left\{ ( y - Ra)^T W (y - Ra) \right\}  \\
+0 &= \frac{d}{da}\left\{ ( y^T - (Ra)^T) (Wy - WRa) \right\} \\
+0 &= \frac{d}{da}\left\{ ( y^TWy - (Ra)^TWy  - y^TWRa + (Ra)^TWRa ) \right\}  \\
+0 &= \frac{d}{da}\left\{ ( y^TWy -2y^TWRa + a^TR^TWRa ) \right\}  \\
+0 &= 0 -2y^TWR + 2a^T(R^TWR)   \\
+0 &= - 2y^TWR + 2R^TWRa \\
+y^TWR &= R^TWRa \\
+R^TWy &= R^TWRa \\
+(R^TWR)^{-1}R^TWy &=  \hat{a}\\
+\end{split}\end{equation}
+* Remember from matrix calculus, if $y = x^TAx$ then $\frac{d}{dx} = x^T(a + a^T)$ hence, 
+\begin{equation} \begin{split}
+\frac{d}{dx} [ (a^T)R^TWR(a) ] & = a^T(R^TWR + (R^TWR)^T) \\
+&=a^T(R^TWR + (R^T)(R^TW)^T)\\
+&=a^T(R^TWR + (R^T)(W^TR))\\
+&=a^T(R^TWR + R^TW^TR)\\
+&=a^T(R^T( WR + W^TR))\\
+&=a^T(R^T( W + W^T)R)\\
+\end{split}\end{equation}
+W is a diagnol matrix of weights so $W = W^T$ and hence,
+$$ a^T(R^T( W + W )R) = 2a^T(R^TWR)$$
 
 \item From this, conclude that for the special case of the local linear estimator ($D=1$), we can write $\hat{f}(x)$ as a linear smoother of the form
 $$
@@ -291,6 +326,8 @@ where the unnormalized weights are
 w_i(x) &=& K \left( \frac{x-x_i}{h} \right) \left\{  s_2(x) - (x_i-x) s_1(x) \right\}\\
 s_j(x) &=& \sum_{i=1}^n K \left( \frac{x-x_i}{h} \right) (x_i-x)^j \, .
 \end{eqnarray*}
+
+\textbf{TODO}
 
 \item Suppose that the residuals have constant variance $\sigma^2$ (that is, the spread of the residuals does not depend on $x$).  Derive the mean and variance of the sampling distribution for the local polynomial estimate $\hat{f}(x)$ at some arbitrary point $x$.  Note: the random variable $\hat{f}(x)$ is just a scalar quantity at $x$, not the whole function.
 
