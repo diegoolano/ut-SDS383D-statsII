@@ -132,17 +132,46 @@ h_vec = seq(1,10,by=.1)           #Candidate h values.
 pred_err = rep(0,length(h_vec))
 
 for (i in 1:length(h_vec)){
-  #get pred error for each h using a local linear smoother and gaussian kernal
-  res = eval_loocv(x,y,K=K_gaus,h=h_vec[i])  
+  #get pred error for each h using a local linear regression (D=1) and gaussian kernal
+  res = eval_local_poly_loocv(x,y,K=K_gaus,h=h_vec[i],D=1)  
   pred_err[i] = res$loocv_err
 }
 
 #plot(h_vec,pred_err)
 
 #Select optimal h and obtain fitted values.
-h_opt = h_vec[which.min(pred_err)]            #3.9 optimal h for linear smoother, 6.9 for polysmoother, 
+h_opt = h_vec[which.min(pred_err)]            #3.9 optimal h for linear smoother, 6.9 for local linear regression
 yhat = local_linear_smoother(x,y,x,h_opt,K_gaus)$yhat
 
 #check data and fit from chosen h
 plot(x,y,main=paste('Local Linear Smoothing, Gaussian Kernel, h = ',sep="",h_opt))  
 lines(sort(x),yhat[order(x)],col='red',lwd=1) 
+
+
+###F) LOOK AT RESIDUALS
+#Inspect the residuals from the model you just fit. 
+#Does the assumption of constant variance (homoscedasticity) look reasonable? If not, do you have any suggestion for fixing it?
+residuals = y - yhat
+plot(x,residuals)
+
+#It appears the residuals have slightly more variance for lower values of x (temperature) and gets more accurate for higher temps
+#sanity check..
+l <- lm( utilities$gasbill / utilities$billingdays ~ utilities$temp)
+plot( utilities$temp, resid(l))
+
+
+###G
+# Put everything together to construct an approximate point-wise 95% confidence interval for the local linear model 
+# (using your chosen bandwidth) for the value of the function at each of the observed points xi for the utilities data. 
+# Plot these confidence bands, along with the estimated function, on top of a scatter plot of the data.
+# use Gaussian critical values for your confidence set.
+
+RSS = sum(residuals^2)                  #residuals sum of squares
+sigma2_hat = RSS / (length(yhat)-1)     #variance is RSS/number of observations - 1
+lower = yhat - 1.96*sqrt(sigma2_hat)    #standard error below/above 
+upper = yhat + 1.96*sqrt(sigma2_hat)
+
+plot(x,y,main=paste('Local Linear Smoothing 95% Confidence Bands, h = ',sep="",h_opt))  
+lines(sort(x),yhat[order(x)],col='red',lwd=1) 
+lines(sort(x),lower[order(x)],col='blue',lwd=1,lty=2) 	
+lines(sort(x),upper[order(x)],col='blue',lwd=1,lty=2) 
