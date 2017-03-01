@@ -53,12 +53,22 @@ backgroundcolor=\color{lbcolor},
 \def\BState{\State\hskip-\ALG@thistlm}
 \makeatother
 
+\newcommand{\tr}{\text{tr}}
+\newcommand{\pN}{\mathcal{N}}
+\newcommand{\R}{\textsf{R} }
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\y}{\mathbf{y}}
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
 % Simbolo iid
 \newcommand\iid{\stackrel{\mathclap{\normalfont\tiny\mbox{iid}}}{\sim}}
 % Simbolo ind
 \newcommand\ind{\stackrel{\mathclap{\normalfont\tiny\mbox{ind}}}{\sim}}
 \DeclareMathOperator*{\argmin}{argmin}
 \DeclareMathOperator*{\sign}{sign}
+
 
 
 \algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}%
@@ -327,9 +337,47 @@ w_i(x) &=& K \left( \frac{x-x_i}{h} \right) \left\{  s_2(x) - (x_i-x) s_1(x) \ri
 s_j(x) &=& \sum_{i=1}^n K \left( \frac{x-x_i}{h} \right) (x_i-x)^j \, .
 \end{eqnarray*}
 
-\textbf{TODO}
+\par From before, $\hat{f_a} = \hat{a} = (R^TWR)^{-1}R^TWy$ , and  \\for D=1, $\hat{a} \in \mathbb{R}^{D+1} = \mathbf{R}^2$,\\
+$R_x = \begin{bmatrix}
+       1 & (x_1 - x)        \\[0.3em]
+       \cdots & \cdots    \\
+       1 & (x_n - x)        \\[0.3em]
+     \end{bmatrix}$
+$R_x^TW = \begin{bmatrix}
+       w_1 & w_n       \\[0.3em]
+       w_1(x_1 - x) & w_n(x_n - x)        \\[0.3em]
+     \end{bmatrix}$
+\\$R_x^TWR_x = \begin{bmatrix}
+       \sum w_1 & \sum w_i(x_i - x)       \\[0.3em]
+       \sum w_1(x_1 - x) & \sum w_i(x_i - x)^2        \\[0.3em]
+     \end{bmatrix}$
+\\
+\par
+$R_x^TWR_x = \begin{bmatrix}
+      s_0(x) & s_1(x)     \\[0.3em]
+      s_1(x) & s_2(x)        \\[0.3em]
+     \end{bmatrix}$
+\\
+\par
+$(R_x^TWR_x)^{-1} = \frac{1}{s_0s_2 - s_1^2} 
+\begin{bmatrix}  s_2(x) & -s_1(x) \\[0.3em]   -s_1(x) & s_0(x)  \\[0.3em]   \end{bmatrix}$
+
+So now, we have $\hat{a} =  \left( \frac{1}{s_0s_2 - s_1^2}  
+\begin{bmatrix}  s_2(x) & -s_1(x) \\[0.3em]   -s_1(x) & s_0(x)  \\[0.3em]   \end{bmatrix} \right) 
+\left( \begin{bmatrix}  \sum w_iy_i \\[0.3em]  \sum w_i(x_i - x)y_i  \\[0.3em]  \end{bmatrix} \right)$
+
+\par $\hat{a_0} = \frac{1}{s_0s_2 - s_1^2}\left[  s_2(x)\sum w_iy_i  - s_1(x)\sum w_i(x_i - x)y_i \right]$
+\par $\hat{a_0} = \frac{1}{s_0s_2 - s_1^2}\left(  \underbrace{ \sum w_i \big[ s_2(x)  - (x_i - x) s_1(x)} \big] y_i \right)$ 
+     
+\par where  $\frac{1}{s_0s_2 - s_1^2}  = \sum w_is_2 - \sum w(x_i - x)s_1 =  \underbrace{ \sum w_i \big[ s_2(x) - (x_i - x) s_1(x) \big]}$
+
+\par which puts $\hat{f}(x)$ in the form of the linear smoother from above .
+
+
 
 \item Suppose that the residuals have constant variance $\sigma^2$ (that is, the spread of the residuals does not depend on $x$).  Derive the mean and variance of the sampling distribution for the local polynomial estimate $\hat{f}(x)$ at some arbitrary point $x$.  Note: the random variable $\hat{f}(x)$ is just a scalar quantity at $x$, not the whole function.
+
+
 
 \item We don't know the residual variance, but we can estimate it.  A basic fact is that if $x$ is a random vector with mean $\mu$ and covariance matrix $\Sigma$, then for any symmetric matrix $Q$ of appropriate dimension, the quadratic form $x^T Q x$ has expectation
 $$
@@ -340,6 +388,19 @@ $$
 \hat{\sigma}^2 = \frac{\Vert r \Vert_2^2}{n - 2\mbox{tr}(H) + \mbox{tr}(H^T H)} \, ,
 $$
 and simplify things as much as possible.  Roughly under what circumstances will this estimator be nearly unbiased for large $n$?  Note: the quantity $2\mbox{tr}(H) - \mbox{tr}(H^T H)$ is often referred to as the ``effective degrees of freedom'' in such problems.
+
+\par By assumption, $E(\mathbf{y}) = f(\mathbf{x})$ and $\text{cov}(\mathbf{y}) = \sigma^2 I$ then, 	
+\begin{equation} \begin{split}
+	E \left( \Vert r \Vert_2^2 \right) &= E \left( (\y - H\y)^T(\y-H\y) \right) \\
+	&= E \left( \y^T \y - 2\y^T H \y + \y^T H^T H \y \right) \\
+	&= E\left(\y^T \y  \right) - 2 E \left( \y^T H \y \right) + E \left( \y^T H^T H \y \right) \\
+	&= \left( \tr\left[ I\sigma^2 I \right] + f(\x)^T f(\x) \right) - 2 \left( \tr\left[ H^T\sigma^2 I \right] + f(\x)^T H^T f(\x) \right) + \left( \tr \left[ H^T H \sigma^2 I \right] + f(\x)^T H^T H f(\x)\right) \\
+	&= \left( n\sigma^2 + f(\x)^T f(\x) \right) - 2 \left( \sigma^2 \tr[H] + f(\x)^T H^T f(\x) \right) + \left( \sigma^2 \tr[H^TH] + f(\x)^T H^T H f(\x)\right) \\
+	&= \left(n - \tr[H] + \tr [H^T H] \right) \sigma^2 + \left( f(\x)^T f(\x) - 2 f(\x)^T H^T f(\x) + f(\x)^T H^T H f(\x) \right) \\
+	&= \left(n - \tr[H] + \tr [H^T H] \right) \sigma^2 + \left( f(\x) - Hf(\x) \right)^T \left( f(\x) - Hf(\x) \right),\\
+\end{split} \end{equation}
+	so the estimator $$\hat{\sigma}^2 = \frac{\| r^2 \|_2^2}{n - \tr[H] + \tr [H^T H]}$$ will be nearly unbiased in $\sigma^2$ when $f(\x) \approx H f(\x)$.
+
 
 \item Write a new R function that fits the local linear estimator using a Gaussian kernel for a specified choice of bandwidth $h$. Then load the data in ``utilities.csv'' into R.\footnote{On the class GitHub site.}  This data set shows the monthly gas bill (in dollars) for a single-family home in Minnesota, along with the average temperature in that month (in degrees F), and the number of billing days in that month.  Let $y$ be the average daily gas bill in a given month (i.e.~dollars divided by billing days), and let $x$ be the average temperature.  Fit $y$ versus $x$ using local linear regression and some choice of kernel.  Choose a bandwidth by leave-one-out cross-validation.
 

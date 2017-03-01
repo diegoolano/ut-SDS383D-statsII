@@ -12,47 +12,6 @@ source("kernal_and_related_functions.R")
 
 #This should involve a fairly straightforward "wrapper" of the function you've already written.
 
-fit_and_predict_with_kernel <- function(training_data, testing_data, kernel_f=K_gaus, hval=0){
-  
-  #Learn on TRAINING DATA
-  x = training_data[,1]
-  y = training_data[,2]
-  
-  #Predict on Test Data
-  x_str = testing_data[,1]                #estimate function value at these points  
-  y_str = testing_data[,2]
-  
-  if(hval == 0){
-      #GET OPTIMAL H FOR given kernel_f 
-      h_vec = seq(.01,1,by=.01)             #Candidate h values bandwidths to choose from,
-      fhat_str_mat = matrix(rep(0,length(h_vec) * length(x_str)),
-                            nrow = length(h_vec), ncol = length(x_str))  #store fhat_str
-      
-      pred_err_test = rep(0,length(h_vec))
-      
-      #fit on specified choices of h
-      for (i in 1:length(h_vec)){
-        fhat_str_mat[i,] = linear_smoother(x,y,x_str,h=h_vec[i],K=kernel_f)
-        pred_err_test[i] = sum(fhat_str_mat[i,] - y_str)^2 / (length(y_str))
-      }
-      optimal_h = h_vec[which.min(pred_err_test)]
-      
-      #return estimated functions and the realized prediction error on the testing data for each value of h.
-      return( list(H=h_vec,fhat=fhat_str_mat,pred_err=pred_err_test,opt_h=optimal_h))
-  }
-  else{
-      #Here we are given a single bandwidth and just need to evaluate for it
-      #Calculate predicted points for test data set, and prediction error.
-      yhat = linear_smoother(x,y,x_str,hval,kernel_f)
-      pred_err_test = sum(yhat-y_str)^2 / (length(x))
-      return(list(yhat=yhat, pred_err_test = pred_err_test))
-  }  
-}
-
-
-
-
-
 
 #PROBLEM A
 #Data Generation Same from Curvefitting section
@@ -68,7 +27,7 @@ training_ids = sample(1:n,size=n*.8,replace=F)
 training_d =  cbind(x[training_ids],y[training_ids])
 testing_d = cbind(x[-training_ids],y[-training_ids])
 
-res <- fit_and_predict_with_kernel(training_d, testing_d)
+res <- fit_and_predict_with_linear_smoother(training_d, testing_d,hval = 0, hvec= seq(.01,1,by=.01))  #candidate h's
 
 #attributes(res)
 #Look at error compared to h
@@ -127,7 +86,7 @@ for (i in 1:4){
   res <- fit_and_predict_with_kernel(train_i, test_i)
   
   optimal_h[i] = res$opt_h
-  yhats[[i]] = fit_and_predict_with_kernel(train_i,test_i,K_gaus,optimal_h[i])$yhat
+  yhats[[i]] = fit_and_predict_with_linear_smoother(train_i,test_i,K_gaus,optimal_h[i])$yhat
 }
 
 #Plot output with fitted data using optimal h values.
@@ -141,3 +100,49 @@ for (i in 1:4){
   lines(sort(x_str),yhats[[i]][idx],col='red')     #red fitted line.
   points(sort(x_str),y_wiggly_actual[idx],col=4)   #blue actual
 }
+
+
+
+
+#========================================================================
+# local polyinomal regression 
+#========================================================================
+#Problem D
+#1) Make function to fit local linear estimator using a Gaussian kernel for a specified choice of bandwidth h. 
+#2) Load the data in utilities.csv, which shows the monthly gas bill (in dollars) for a single-family home in Minnesota, 
+#   along with the average temperature in that month (in degrees F), and the number of billing days in that month. 
+#   Let y be the average daily gas bill in a given month (i.e. dollars divided by billing days), and let x be the average temperature. 
+#3) a. Choose a bandwidth by leave-one-out cross-validation.
+#   b. Fit y versus x using local linear regression and some choice of kernel. 
+
+#1) see fit_and_predict_with_kernel(training_data, testing_data, kernel_f=K_gaus, hval=0, h_vec=0)
+#2) 
+utilities = read.csv('/Users/dolano/htdocs/ut-james-scott/statsII/ut-SDS383D-statsII/exercise3/utilities.csv',header=T)
+x = utilities$temp  							                 #average temp.
+y = utilities$gasbill / utilities$billingdays	     #average daily gas bill for a given month
+
+#Center variables so we don't need a vector of 1's for the intercept
+x = x - mean(x)
+y = y - mean(y)
+
+plot(x,y)  #see data
+
+#3a 
+h_vec = seq(1,10,by=.1)           #Candidate h values. 
+pred_err = rep(0,length(h_vec))
+
+for (i in 1:length(h_vec)){
+  #get pred error for each h using a local linear smoother and gaussian kernal
+  res = eval_loocv(x,y,K=K_gaus,h=h_vec[i])  
+  pred_err[i] = res$loocv_err
+}
+
+#plot(h_vec,pred_err)
+
+#Select optimal h and obtain fitted values.
+h_opt = h_vec[which.min(pred_err)]            #3.9 optimal h for linear smoother, 6.9 for polysmoother, 
+yhat = local_linear_smoother(x,y,x,h_opt,K_gaus)$yhat
+
+#check data and fit from chosen h
+plot(x,y,main=paste('Local Linear Smoothing, Gaussian Kernel, h = ',sep="",h_opt))  
+lines(sort(x),yhat[order(x)],col='red',lwd=1) 
