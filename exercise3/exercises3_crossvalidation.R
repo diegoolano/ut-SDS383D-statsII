@@ -139,12 +139,14 @@ for (i in 1:length(h_vec)){
 
 #plot(h_vec,pred_err)
 
-#Select optimal h and obtain fitted values.
-h_opt = h_vec[which.min(pred_err)]            #3.9 optimal h for linear smoother, 6.9 for local linear regression
-yhat = local_linear_smoother(x,y,x,h_opt,K_gaus)$yhat
+#3b.  Select optimal h and obtain fitted values.
+h_opt = h_vec[which.min(pred_err)]            #6.9 for local linear regression
+res = local_linear_smoother(x,y,x,h_opt,K_gaus)
+yhat = res$yhat
+resH = res$H
 
 #check data and fit from chosen h
-plot(x,y,main=paste('Local Linear Smoothing, Gaussian Kernel, h = ',sep="",h_opt))  
+plot(x,y,main=paste('Local Linear Smoothing with Gaussian Kernel, h = ',sep="",h_opt))  
 lines(sort(x),yhat[order(x)],col='red',lwd=1) 
 
 
@@ -156,8 +158,9 @@ plot(x,residuals)
 
 #It appears the residuals have slightly more variance for lower values of x (temperature) and gets more accurate for higher temps
 #sanity check..
-l <- lm( utilities$gasbill / utilities$billingdays ~ utilities$temp)
-plot( utilities$temp, resid(l))
+#l <- lm( utilities$gasbill / utilities$billingdays ~ utilities$temp)
+#plot( utilities$temp, resid(l))
+
 
 
 ###G
@@ -167,11 +170,82 @@ plot( utilities$temp, resid(l))
 # use Gaussian critical values for your confidence set.
 
 RSS = sum(residuals^2)                  #residuals sum of squares
-sigma2_hat = RSS / (length(yhat)-1)     #variance is RSS/number of observations - 1
-lower = yhat - 1.96*sqrt(sigma2_hat)    #standard error below/above 
-upper = yhat + 1.96*sqrt(sigma2_hat)
+sigma2_hat = RSS / (length(yhat) - 1)     #variance is RSS/number of observations - 1
+Hat = local_poly_smoother(x,y,x,h=h_opt,K_gaus,D=1)$Hat 
 
-plot(x,y,main=paste('Local Linear Smoothing 95% Confidence Bands, h = ',sep="",h_opt))  
-lines(sort(x),yhat[order(x)],col='red',lwd=1) 
-lines(sort(x),lower[order(x)],col='blue',lwd=1,lty=2) 	
-lines(sort(x),upper[order(x)],col='blue',lwd=1,lty=2) 
+var = rowSums(Hat^2) * sigma2_hat
+
+lower = yhat - 1.96*sqrt(var)    #standard error below/above 
+upper = yhat + 1.96*sqrt(var)
+
+idx = sort(x, index.return = T)$ix
+
+plot(x,y,main=paste('Local Linear Smoothing 95% Prediction Interval, h = ',sep="",h_opt))  
+polygon(c(sort(x),rev(sort(x))),c(upper[idx],rev(lower[idx])),col='thistle',border=NA)
+points(x,y,main=paste('Local Lin Smoothing 95% Confidence Bands, h = ',sep="",h_opt))  
+lines(sort(x),yhat[idx],col='red',lwd=1) 
+lines(sort(x),lower[idx],col='blue',lwd=1,lty=2) 	
+lines(sort(x),upper[idx],col='blue',lwd=1,lty=2) 
+
+
+
+
+#==================================
+#GAUSSIAN PROCESSES
+#==================================
+
+### Generate gaussian process of 100 points in [0,1].
+n = 100
+x = sample(seq(0,1,.0001),n,replace=T)
+mu_vec = rep(0,length(x))
+b = 1
+tau1.sq = .1
+tau2.sq = 1e-6
+hyperparams = c(b,tau1.sq,tau2.sq)
+
+x.se  = gaussian_process(x,mu_vec,cov.fun=cov.se,hyperparams)
+x.m52 = gaussian_process(x,mu_vec,cov.fun=cov.m52,hyperparams)
+
+idx = sort(x, index.return = T)$ix
+plot(x[idx],x.se[idx],col='blue',lwd=1,type='l')
+
+# Hyperparameter Plotting for Squared Expontentila Covariance Function
+### Test 1: Varying b for Sq Exponential and Matern 5/2 Cov Functions.
+tau1.sq = .001
+tau2.sq = 1e-6
+
+B=c(.05,.1,.25,1,4)
+colors = rainbow(length(B))
+
+#Squared exponential plot.
+for (i in 1:length(B)){
+  fx = gaussian_process(x,params=c(B[i],tau1.sq,tau2.sq),mu=mu_vec,cov.fun=cov.se)
+  idx = sort(x, index.return = T)$ix
+  if (i==1){ 
+    plot(x[idx],fx[idx],lwd=2,type='l',col=colors[i],ylim=c(-.15,.15),main='Squared Exponential Covariance (tau1.sq=.001,tau2.sq=1e-6)')
+  } else{
+    lines(x[idx],fx[idx],lwd=2,type='l',col=colors[i])
+  }
+}
+legend('topleft',lty=1,lwd=2,legend=paste('b=',B),col=colors)
+
+
+#Matern 5/2 plot.
+for (i in 1:length(B)){
+  fx = gaussian_process(x,params=c(B[i],tau1.sq,tau2.sq),mu=mu_vec,cov.fun=cov.m52)
+  idx = sort(x, index.return = T)$ix
+  if (i==1){
+    plot(x[idx],fx[idx],lwd=2,type='l',col=colors[i],ylim=c(-.15,.15),main='Matern 5/2 Covariance (tau1.sq=.001,tau2.sq=1e-6)')
+  } else{
+    lines(x[idx],fx[idx],lwd=2,type='l',col=colors[i])
+  }
+}
+legend('topleft',lty=1,lwd=2,legend=paste('b=',B),col=colors)
+
+#Making b bigger (while holding everything else ) makes GP vary less
+#Making tau1 bigger (while holding everything else ) makes GP everything vary more
+
+#for hyper parameters of Gaussian Processes
+#b is period
+#tau.1 is amplitude
+#tau.2 is noise ( numerical precision regularization term )

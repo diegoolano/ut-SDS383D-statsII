@@ -120,6 +120,16 @@ local_linear_smoother = function(x,y,x_str,h,K=K_gaus,D=1){
   n = length(x)                                  #number of observations
   yhat = rep(0,length(x_str))                    #vector of yhats to return
   
+  #get var for 
+  Hat = matrix(0,nrow=length(x),ncol=length(x)) 
+  for (i in 1:length(x)){  		                   
+    for (j in 1:length(x)){	                    
+      Hat[i,j] = (1/h) * K((x[j] - x[i])/h)	
+    } 	    
+    Hat[i,] = Hat[i,] / sum(Hat[i,])                 #Normalize weights so each row sums to one
+  }
+  
+  
   for (b in 1:length(x_str)){
     s1 = sum( K((x_str[b]-x)/h) * (x-x_str[b]) )
     s2 = sum( K((x_str[b]-x)/h) * (x-x_str[b])^2 )
@@ -127,25 +137,27 @@ local_linear_smoother = function(x,y,x_str,h,K=K_gaus,D=1){
     yhat[b] = crossprod(w,y) / sum(w)                # sum( w_i y_i ) / sum( w_i)
   }
   
-  return(list(yhat=yhat))
+  
+  
+  return(list(yhat=yhat,H=Hat))
 }
 
 
 
 local_poly_smoother = function(x,y,x_str,h,K=K_gaus,D=1){
   # Smoothing function for local polynomial regression with inputs.
-  #     x = a scalar or vector of regression covariates.
-  #  		x_str = scalar new x value for prediction.
-  #			h = a positive bandwidth.
-  #			K = a kernel function.  Default is set to Gaussian kernel.
-  #			D = degree of polynomial.  Default = 1.
+  #     x covariates.
+  #  		x_str  x values for prediction.
+  #			h positive bandwidth.
+  #			K kernel function.  Default is set to Gaussian kernel.
+  #			D degree of polynomial.  Default = 1.
   # outputs	yhat = a scalar or vector of smoothed x values.
   
-  n = length(x)	#For i indices.
-  yhat = rep(0,length(x_str))	#To store function outputs.
+  n = length(x)	                                    #For i indices.
+  yhat = rep(0,length(x_str))	                      #To store function outputs.
   weights.mat = matrix(0,nrow=n,ncol=length(x_str)) #To hold weights for each x-str.
   ahat = matrix(0,ncol=length(x_str),nrow=D+1)
-  Hat = matrix(0,length(x_str),n)	#Store projection matrix.  Consists of row 1 of R times each xstar intercept element.
+  Hat = matrix(0,length(x_str),n)	                  #Store H.. Consists of row 1 of R times each xstar intercept element.
   
   for (b in 1:length(x_str)){	           #cycle through points to predict
     xstr.i = x_str[b]                    
@@ -175,7 +187,7 @@ eval_local_poly_loocv = function(x,y,K=K_gaus,h,D){
   #outputs prediction error for data (loocv_pred_err)
   #  	 and predicted values for data's x vals (yhat)
   
-  x_str = x      #existing x's as target points for LOOCV.
+  x_str = x      #use existing x's as target points for LOOCV.
   
   #Call local_linear_smoother function to obtain yhat for each x point.
   output = local_poly_smoother(x,y,x_str,h,K,D)
@@ -186,4 +198,88 @@ eval_local_poly_loocv = function(x,y,K=K_gaus,h,D){
   loocv_err = sum(((y-yhat)/(1-Hii))^2) #Calculate loocv prediction error.
   
   return(list(yhat=yhat,loocv_err=loocv_err))
+}
+
+
+
+gaussian_process = function(x,mu,cov.fun,hyperparams){
+  #-------------------------------------------------------------
+  #Generates realizations from the Gaussian Process 
+  #			with mean mu and covariance matrix.	
+  #-------------------------------------------------------------
+  #in	
+  #     x = vector (x1,...,xn) on unit interval [0,1]
+  #			params = vector(b,tau1.sq,tau2.sq) of 3 hyperparameters
+  #			mu = vector of means, length n.
+  #			cov.fun = covariance matrix function.
+ 	#out
+  #fx = vector of realizations from gaussian process.
+  #-------------------------------------------------------------
+  
+  n1 = length(x)
+  n2 = length(y)
+  covmatrix = matrix(nrow=n1,ncol=n2)
+  
+  #USE OUTER function as opposed to double loop
+  #?outer()
+  
+  for (i in 1:n1){
+    for (j in 1:n2){ 
+      covmatrix[i,j] = cov.fun(x[i],y[j],hyperparams) 
+    }
+  }
+  
+  #Generate realizations f(x1)...f(xn).
+  #Require the mvtnorm package for random normal generation.
+  require(mvtnorm)
+  fx = rmvnorm(1,mu,covmatrix,method="chol")   #use cholesky
+  return(fx)
+}
+
+
+##n = length(x)
+##cov = make.covmatrix(x,x,cov.fun,params)
+
+
+l2norm = function(x){
+  #Calculates the Euclidean (l2) norm for a vector x
+  # == square root of sum of squares of x
+  return(norm=sqrt(sum(x^2)))
+}
+
+cov.se = function(x.i,x.j,hyperparams){
+  #Computes the (i,j) element for squared exponential cov matrix.
+  #INPUTS:	x.i, x.j = two points from two vectors in same space.
+  #			      params = vector(b,tau1.sq,tau2.sq) of 3 hyperparameters,
+  #OUTPUT:	cov = (i,j) element for squared exponential cov matrix.
+  b = hyperparams[1]
+  tau1.sq = hyperparams[2]
+  tau2.sq = hyperparams[3]
+  kd = function(a,b) (a==b)    #Kronecker delta function.
+  ed = l2norm(x.i-x.j)         #Euclidean distance for x.i, x.j.
+  cov = tau1.sq * exp(-.5 * (ed/b)^2) + tau2.sq * kd(x.i,x.j)	
+  return(cov)	
+}	
+
+cov.m52 = function(x.i,x.j,hyperparams){
+  #return	cov = (i,j) element for Matern 5/2 cov matrix.
+  b = hyperparams[1]
+  tau1.sq = hyperparams[2]
+  tau2.sq = hyperparams[3]
+  kd = function(a,b) (a==b)  #Kronecker delta function.
+  ed = l2norm(x.i-x.j)       #Euclidean distance for x.i, x.j.
+  cov = tau1.sq * ( 1 + (sqrt(5)*ed / b) + (5/3 * (ed/b)^2)) * exp(-sqrt(5) * ed / b)  + tau2.sq * kd(x.i,x.j)
+  return(cov)	
+} 
+
+make.covmatrix = function(x,y,cov.fun,hyperparams=NA){
+  #Assemble covariance matrix for a Gaussian Process w specified cov. function.
+  #			params = vector(b,tau1.sq,tau2.sq) of 3 hyperparameters,
+  n1 = length(x)
+  n2 = length(y)
+  covmatrix = matrix(nrow=n1,ncol=n2)
+  for (i in 1:n1){
+    for (j in 1:n2){ covmatrix[i,j] = cov.fun(x[i],y[j],hyperparams) }
+  }
+  return(covmatrix)
 }

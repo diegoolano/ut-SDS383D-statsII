@@ -440,11 +440,34 @@ where $d = \Vert x_1 - x_2 \Vert_2$ is the distance between the two points $x_1$
 
 \item Suppose you observe the value of a Gaussian process $f \sim \mbox{GP}(m,C)$ at points $x_1, \ldots, x_N$.  What is the conditional distribution of the value of the process at some new point $x^{\star}$?  For the sake of notational ease simply write the value of the $(i,j)$ element of the covariance matrix as $C_{i,j}$, rather than expanding it in terms of a specific covariance function.
 
+
+Let  $p(f (x^{*})|x^{*} , \textbf{x}, f(x))$ be the predictive distribution for the value of the gaussian process at a new point.  By definition of Gaussian process,\\
+$  \begin{bmatrix} f(x^*) \\  f(x_1)   \\ \vdots \\ f(x_N) \end{bmatrix}
+\sim \left( \begin{bmatrix} m(x^*) \\ m(x_1) \\ \vdots \\ m(x_N) \end{bmatrix}
+; \begin{bmatrix} 
+C(x^*,x^*) & C(x_1,x^*) & \cdots & C(x_N,x^*) \\ 
+C(x^*,x_1) & C(x_1,x_1) & \cdots & C(x_N,x_1) \\ 
+\vdots & \vdots & \ddots & \vdots \\
+C(x^*,x_N) & C(x_1,x_N) & \cdots & C(x_N,x_N) \\ 
+\end{bmatrix} \right)$\\
+
+Since we are in a multivariate setting, we can now use Homework 1 results about conditional distributions of the multivariate Normal distributions and write$$f(x^*) | f(x_1 ), \cdots , f(x_N ) \sim N (m(x^*) + \Sigma_{12} \Sigma_{22}^{-1} [f(x) - m(x)]; C(x^*, x^*) - \Sigma_{12} \Sigma_{22}^{-1} \Sigma_{21} ) $$where: \\ 
+$\Sigma_{12} = (C(x^*,x_1),...,C(x^*,x_N))$\\$ \Sigma_{22} = \begin{bmatrix} C(x_1,x_1) & \cdots & C(x_1,x_N) \\\vdots & \ddots & \vdots \\C(x_N,x_1) & \cdots & C(x_N,x_N)\\
+\end{bmatrix}$
+
+
+
 \item Prove the following lemma.
 
 %\begin{lemma}
-Suppose that the joint distribution of two vectors $y$ and $\theta$ has the following properties: (1) the conditional distribution for $y$ given $\theta$ is multivariate normal, $(y \mid \theta) \sim N(R\theta, \Sigma)$; and (2) the marginal distribution of $\theta$ is multivariate normal, $\theta \sim N(m,V)$.  Assume that $R$, $\Sigma$, $m$, and $V$ are all constants.  Then the joint distribution of $y$ and $\theta$ is multivariate normal.
+Suppose that the joint distribution of two vectors $y$ and $\theta$ has the following properties: \\ (1) the conditional distribution for $y$ given $\theta$ is multivariate normal, $(y \mid \theta) \sim N(R\theta, \Sigma)$; and \\(2) the marginal distribution of $\theta$ is multivariate normal, $\theta \sim N(m,V)$.  \\Assume that $R$, $\Sigma$, $m$, and $V$ are all constants.  \\Then the joint distribution of $y$ and $\theta$ is multivariate normal.
 %\end{lemma}
+\\
+\par Affine approach: \\
+$y = R\theta + \epsilon $\\
+$\epsilon \sim N(0, \Sigma)$\\
+$\theta \sim N(m,v)$\\
+$\begin{bmatrix} y \\ \theta \end{bmatrix} = \begin{bmatrix} R \\ I \end{bmatrix} \theta +   \begin{bmatrix} I \\ O \end{bmatrix} \epsilon $
 
 \end{enumerate}
 
