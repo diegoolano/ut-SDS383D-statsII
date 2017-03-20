@@ -249,3 +249,207 @@ legend('topleft',lty=1,lwd=2,legend=paste('b=',B),col=colors)
 #b is period
 #tau.1 is amplitude
 #tau.2 is noise ( numerical precision regularization term )
+
+
+#==================================
+#NON PARAMETRIC SMOOTHING
+#==================================
+
+#PART C
+# For the utilities data, plot the pointwise posterior mean and 95% posterior confidence interval 
+#    for the value of the function at each of the observed points x_i 
+#    (again, superimposed on top of the scatter plot of the data itself). 
+# Choose (tau_2)^2 to be very small, say 10^-6, and choose (b, (tau_1)^2) that give a sensible-looking answer
+
+rm(list = ls())
+source("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/r/kernal_and_related_functions.R")
+utilities = read.csv('/Users/dolano/htdocs/ut-james-scott/statsII/ut-SDS383D-statsII/exercise3/utilities.csv',header=T)
+x = utilities$temp    						                 #average temp.
+y = utilities$gasbill / utilities$billingdays	
+n = length(x)
+
+#Set up hyperparameters.
+b = 50
+tau1.sq = 5
+tau2.sq = 0
+params = c(b,tau1.sq,tau2.sq)
+
+#Run prediction with sigma2=1 to estimate residuals.
+pred = gp.predict(x,y,x.new=x,cov.fun=cov.se,params=params,sig2=4)
+sig2 = sum(y-pred$post.mean)^2/(n-1)  #0.1806997
+
+#Rerun with new estimated sigma2.
+pred = gp.predict(x,y,x.new=x,cov.fun=cov.se,params=params,sig2=sig2)
+
+#TODO show how to select tuning parameters
+
+#Vectors to hold posterior mean, var, and CI bounds.
+post.mean = pred$post.mean
+post.se = sqrt(pred$post.var)
+post.ci.lb = post.mean - 1.96*post.se
+post.ci.ub = post.mean + 1.96*post.se
+
+#Plot
+idx = sort(x, index.return = T)$ix
+plot(x,y,col='darkgrey',xlab='x',ylab='y',main='Utilities Data Posterior Mean and 95% CI')
+lines(x[idx],post.ci.lb[idx],col='red',lty=2)
+lines(x[idx],post.ci.ub[idx],col='red',lty=2)
+
+#Shade confidence bands.
+polygon(c(sort(x),rev(sort(x))),c(post.ci.ub[idx],rev(post.ci.lb[idx])),col='lightgrey',border=NA)
+points(x,y)
+lines(x[idx],post.mean[idx],col='blue')
+
+
+#=====================
+# PART F: WEATHER DATA
+#=====================
+# In weather.csv you will find data on two variables from 147 weather stations in the American Pacific northwest.
+#   pressure : the difference between the forecasted pressure and the actual pressure reading at that station (in Pascals) 
+#   temperature : the difference between the forecasted temperature and the actual temperature reading at that station (in Celsius) 
+
+# There are also latitude and longitude coordinates of each station. 
+# Fit a Gaussian process model for each of the temperature and pressure variables. 
+# Choose hyperparameters appropriately. 
+# Visualize your fitted functions (both the posterior mean and posterior standard deviation) 
+# on a regular grid using something like a contour plot or color image. 
+# Read up on the image, filled.contour, or contourplot17 functions in R. 
+# An important consideration: is Euclidean distance the appropriate measure to go into the covariance function? 
+
+rm(list = ls())
+source("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/r/kernal_and_related_functions.R")
+weather <- read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/ut-SDS383D-statsII/exercise3/weather.csv", header = T)
+cols <- rev(colorRampPalette(brewer.pal(10, "RdYlBu"))(100))  #color palette
+
+# Plot pressure & temperature
+pressureplot <- ggplot(weather, aes(x=lon, y=lat, colour = pressure)) + 
+  geom_point(pch = 15, size = 2) + scale_colour_gradientn(colours=cols) + theme_bw() 
+
+temperatureplot <- ggplot(weather, aes(x=lon, y=lat, colour = temperature)) + 
+  geom_point(pch = 15, size = 2) +   scale_colour_gradientn(colours=cols) + theme_bw() 
+
+
+###
+n = nrow(weather)
+x = as.matrix(weather[,3:4])
+
+# Fit a GP Model for each of the temp variables and choose Optimal Parameters tau1.sq and b.                   
+y = weather$temperature
+
+#Run prediction with sigma2=1 to estimate residuals.  x is n x 2 and y is n x 1
+init.params = c(5,1,1,1E-6)
+pred = gp.predict(x,y,x.new=x,cov.se.2d, params = init.params,sig2=1)$post.mean
+sig2 = sum(y-pred)^2/(n-1)  #3.13
+
+#Choose optimal parameters for model using marginal loglikelihood.
+tau2.sq = 1E-6
+tau1.sq = .1
+b1 = 10
+b2= 10
+params = c(b1,b2,tau1.sq,tau2.sq)
+
+test.gp = gaussian_process(x,mu=rep(0,nrow(x)),cov.fun=cov.se.2d,hyperparams=params)
+test.logl =  gp.logl.y(x,y,mu=rep(0,nrow(x)),cov.fun=cov.se.2d,params=params,sig2=1)
+
+
+#----------------------------------------------------
+#Weather: Grid mesh of parameters to test.
+tau2.sq = 0
+tau1.sq = seq(.1,15,length=20) 
+b = b1 = b2 = seq(.1,2,length=20) 
+triplets = expand.grid(b1,b2,tau1.sq,tau2.sq)
+
+#Empty vector to hold marginal log-likelihoods.
+ll = rep(0,nrow(triplets))
+
+#Iterate through triplets.
+for (k in 1:length(ll)){
+  print(length(ll)-k)
+  triplet = unlist(triplets[k,])
+  ll[k] = gp.logl.y(x,y,mu=rep(0,nrow(x)),cov.fun=cov.se.2d,params=triplet,sig2)
+}
+
+#Save optimal triplet of parameters.
+max.idx = which.max(ll)
+opt.params.temp = unlist(triplets[max.idx,])
+
+
+#NOW try for pressure.  construct grid of parameters to test.
+y = weather$pressure
+tau2.sq = 0
+tau1.sq = seq(40000,60000,length=50)
+b = b1 = b2 = seq(.01,10,length=50)
+triplets = expand.grid(b1,b2,tau1.sq,tau2.sq)
+
+#Empty vector to hold marginal log-likelihoods.
+ll = rep(0,nrow(triplets))
+
+#Iterate through triplets.
+for (k in 1:length(ll)){
+  print(length(ll)-k)
+  triplet = unlist(triplets[k,])
+  ll[k] = gp.logl.y(x,y,mu=rep(0,nrow(x)),cov.fun=cov.se.2d,params=triplet,sig2)
+}
+
+#Save optimal triplet of parameters.
+max.idx = which.max(ll)
+opt.params.pressure = unlist(triplets[max.idx,])
+
+
+# Temperature & Pressure fitting
+lon.range = range(x[,1])
+lat.range = range(x[,2])
+
+lon.new = seq(lon.range[1],lon.range[2],length=40)
+lat.new = seq(lat.range[1],lat.range[2],length=40)
+
+x.new = as.matrix(expand.grid(lon.new,lat.new))
+
+#Predict temp values.
+y = weather$temperature
+temp.pred = gp.predict(x,y,x.new,cov.se.2d, params = opt.params.temp,sig2=sig2)$post.mean
+
+#Predict pressure values.
+y = weather$pressure
+pressure.pred = gp.predict(x,y,x.new,mu=rep(0,nrow(x)),cov.se.2d, params = opt.params.pressure,sig2=sig2)$post.mean
+
+
+# Temperature plot                                       
+pred.values= cbind(x.new,temp.pred)
+colnames(pred.values) = c('lon','lat','pred')
+
+z = matrix(temp.pred,byrow=F,nrow=60)
+
+filled.contour(lon.new,lat.new,z,
+               key.title = title(main="Temp"),
+               color.palette = rainbow,
+               plot.axes = {
+                 axis(1)
+                 axis(2)
+                 contour(lon.new,lat.new,z,add=T,lwd=2)             
+               }
+)
+mtext(paste('Optimal Parameters: b1 = ',round(opt.params.temp[1],2),
+            ', b2 = ',round(opt.params.temp[2],2),
+            ', tau1.sq = ', round(opt.params.temp[3],2),
+            ', tau2.sq = 0',sep=""),side=3)
+
+
+
+# PRESSURE PLOTTING                                           ===
+pred.values= cbind(x.new,pressure.pred)
+colnames(pred.values) = c('lon','lat','pred')
+z = matrix(pressure.pred,byrow=F,nrow=60)
+filled.contour(lon.new,lat.new,z,
+               key.title = title(main="Pressure"),
+               color.palette = rainbow,
+               plot.axes = {
+                 axis(1)
+                 axis(2)
+                 contour(lon.new,lat.new,z,add=T,lwd=2)             
+               }
+)
+mtext(paste('Optimal Parameters: b1 = ',round(opt.params.pressure[1],2),
+            ' b2 = ',round(opt.params.pressure[2],2),
+            ' tau1.sq = ', round(opt.params.pressure[3],2),
+            'tau2.sq = 0'),side=3)	

@@ -476,9 +476,57 @@ $\begin{bmatrix} y \\ \theta \end{bmatrix} = \begin{bmatrix} R \\ I \end{bmatrix
 
 \begin{enumerate}[label=(\Alph*)]
 
-\item Suppose we observe data $y_i = f(x_i) + \epsilon_i$, $\epsilon_i \sim N(0, \sigma^2)$, for some unknown function $f$. Suppose that the prior distribution for the unknown function is a mean-zero Gaussian process: $f \sim \mbox{GP}(0, C)$ for some covariance function $C$.  Let $x_1, \ldots, x_N$ denote the previously observed $x$ points.  Derive the posterior distribution for the random vector $[f(x_1), \ldots, f(x_N)]^T$, given the corresponding outcomes $y_1, \ldots, y_N$, assuming that you know $\sigma^2$.
+\item Suppose we observe data $y_i = f(x_i) + \epsilon_i$, $\epsilon_i \sim N(0, \sigma^2)$, for some unknown function $f$. \\Suppose that the prior distribution for the unknown function is\\ a mean-zero Gaussian process: $f \sim \mbox{GP}(0, C)$ for some covariance function $C$.  \\Let $x_1, \ldots, x_N$ denote the previously observed $x$ points.  \\Derive the posterior distribution for the random vector $[f(x_1), \ldots, f(x_N)]^T$, \\given the corresponding outcomes $y_1, \ldots, y_N$, assuming that you know $\sigma^2$.
+\\
+\par If we observe $\{(x_1,y_1);\cdots;(x_n,y_n)\}$ where $y_i = f(x_i) + \epsilon_i$, $\epsilon_i \sim N(0,\sigma_2)$ \\and $f$ has a Gaussian process prior, we have the following model:\\$\textbf{Y} | \textbf{f(x)}, \textbf{x}, \sigma^2 \sim N_n(\textbf{f(x)}; \sigma^2 I)$ \\$\textbf{f} \sim GP(0;C)  \rightarrow \textbf{f(x)} \sim N_n(\textbf{0},C(\textbf{x},\textbf{x}))$\\
+\par Now we can find the posterior for the random vector $(f(x_1 ), . . . , f(x_n ))$ denoted  $\textbf{f}$\\
 
-\item As before, suppose we observe data $y_i = f(x_i) + \epsilon_i$, $\epsilon_i \sim N(0, \sigma^2)$, for $i=1, \ldots, N$.  Now we wish to predict the value of the function $f(x^{\star})$ at some new point $x^{\star}$ where we haven't seen previous data.  Suppose that $f$ has a mean-zero Gaussian process prior, $f \sim GP(0, C)$.  Show that the posterior mean $E\{ f(x^{\star}) \mid y_1, \ldots, y_N \}$ is a linear smoother, and derive expressions both for the smoothing weights and the posterior variance of $f(x^{\star})$.
+\begin{equation} \begin{split}
+p(\textbf{f} | \textbf{y}, \textbf{x}, \sigma^2) &\propto p(\textbf{y} | \textbf{f}, \textbf{x}, \sigma^2) * p(\textbf{f}|\textbf{x}, \sigma^2) \\& = (\frac{1}{2\pi \sigma^2})^{\frac{n}{2}} exp\left( -\frac{1}{2}( \textbf{y} - \textbf{f})^T \frac{I}{\sigma^2}(\textbf{y} - \textbf{f}) \right) \\
+& \times  (\frac{1}{2\pi})^{\frac{n}{2}} | C |^{\frac{-1}{2}} exp\left( -\frac{1}{2}\textbf{f}^TC^{-1} \textbf{f}\right)\\
+&\propto exp\left( -\frac{1}{2}( \textbf{y} - \textbf{f})^T \frac{I}{\sigma^2}(\textbf{y} - \textbf{f}) + \textbf{f}^TC^{-1} \textbf{f} \right)\end{split} \end{equation}
+We can now complete the square within the $exp$
+\begin{equation} \begin{split}
+&= -\frac{1}{2}( \textbf{y} - \textbf{f})^T \frac{I}{\sigma^2}(\textbf{y} - \textbf{f}) + \textbf{f}^TC^{-1} \textbf{f}\\
+&= -\frac{1}{2}( \textbf{y}^T - \textbf{f}^T) (\frac{I}{\sigma^2}\textbf{y} - \frac{I}{\sigma^2}\textbf{f}) + \textbf{f}^TC^{-1} \textbf{f}\\
+&= -\frac{1}{2}( \textbf{y}^T\frac{I}{\sigma^2}\textbf{y}  - \textbf{f}^T\frac{I}{\sigma^2}\textbf{y} - \textbf{y}^T\frac{I}{\sigma^2}\textbf{f} + \textbf{f}^T\frac{I}{\sigma^2}\textbf{f}) + \textbf{f}^TC^{-1} \textbf{f}\\
+&= -\frac{1}{2}( \textbf{y}^T\frac{I}{\sigma^2}\textbf{y}  - 2 \textbf{y}^T\frac{I}{\sigma^2}\textbf{f} + \textbf{f}^T\frac{I}{\sigma^2}\textbf{f}) + \textbf{f}^TC^{-1} \textbf{f}\\
+&= -\frac{1}{2}\textbf{y}^T\frac{I}{\sigma^2}\textbf{y}  - \frac{1}{2}\textbf{f}^T\frac{I}{\sigma^2}\textbf{f} + \textbf{y}^T\frac{I}{\sigma^2}\textbf{f} +  \textbf{f}^TC^{-1} \textbf{f}\\
+&= \frac{1}{2}\textbf{f}^T[ \frac{I}{\sigma^2} + C^{-1}]\textbf{f}  - \textbf{y}^T\frac{I}{\sigma^2}\textbf{f}  + \textbf{y}^T\frac{I}{\sigma^2}\textbf{f}\\
+&\propto \frac{1}{2}[ \textbf{f} - \textbf{m}^* ]^T * C^{* - 1}(\textbf{f} - \textbf{m}^*)
+\end{split} \end{equation}
+where\\
+$C^{* - 1} = C^{-1} + \frac{I}{\sigma^2} $\\
+$ \textbf{m}^* = C^{*} \frac{I}{\sigma^2} \textbf{y}$\\
+Therefore, $f(x_1),\cdots,f(x_n)| y , x ,\sigma^2 \sim N(m^*,C^*)$. \\
+As we have seen, the precisions (inverse variance) add, and \\the posterior mean is the precision-weighted average of the prior mean and data.
+
+
+\item As before, suppose we observe $y_i = f(x_i) + \epsilon_i$, $\epsilon_i \sim N(0, \sigma^2)$, for $i=1, \ldots, N$.  \\Now we wish to predict the value of the function $f(x^{\star})$ at some new point $x^{\star}$ \\where we haven't seen previous data.  \\Suppose that $f$ has a mean-zero Gaussian process prior, $f \sim GP(0, C)$.  \\Show that the posterior mean $E\{ f(x^{\star}) \mid y_1, \ldots, y_N \}$ is a linear smoother, and \\derive expressions both for the smoothing weights and the posterior variance of $f(x^{\star})$.
+\\
+\par This is similar to Part B of the previous Gaussian Processes section, except now we are observing noisy
+$y_1\cdots y_n$ observations instead of denoised function values $f(x_1) \cdots f(x_n)$. 
+\\We can take a similar approach to derive the posterior $f(x^*)|y$ for some new point $x^*$ we wish to predict.
+We know that $y_i = f(x_i) + e_i$ , and $f \sim GP(0, C)$, and $e \sim N(0, \sigma^2 I)$.\\
+\par The sum of multivariate gaussians is multivariate gaussian, so $\textbf{y} \sim N(0, C + \sigma^2I)$\\
+We now use a similar technique as Gaussian Procceses Part B to construct the joint (partitioned) distribution
+of $(f^*, y)$.\\
+$  \begin{bmatrix} y \\ f(x^*)  \end{bmatrix}
+\sim N \left(  \textbf{0} 
+; \begin{bmatrix} 
+C(x,x) + \sigma^2I & C(x*,x)^T \\ 
+C(x*,x)  & C(x*,x*) \\ 
+\end{bmatrix} \right)$\\
+\par The only difference from the noise-free (Gaussian Processes, Part B) case is that the covariance matrix of the y's now has an extra $\sigma^2$ term added to diagonal. We can again use the multivariate conditional theory from exercise 1 to obtain the conditional $f^*|y$.
+So now, \\
+\begin{equation} \begin{split}
+ f^* | y & \sim N( E[f* | y], Var[f^*|y]) \\
+ E[f^* | y] & = C(x^*, \textbf{x}) (C(\textbf{x},\textbf{x}) + \sigma^2I)^{-1} y \\
+ Var([f^*|y]) &= C(x^*, x^*) - C(x^*, x)^T(C(\textbf{x},\textbf{x}) + \sigma^2I)^{-1}C(x^*, x) \\
+\end{split} \end{equation}
+\\Thus we can write the mean as a linear smoother as follows:
+$$E[ f* | y, x, x*, \sigma^2 ] = \Sigma_{i=1}^{n} w_i y_i $$
+with $\textbf{w} = C(x^*, \textbf{x}) (C(\textbf{x},\textbf{x}) + \sigma^2I)^{-1} $
 
 \item Go back to the utilities data, and plot the pointwise posterior mean and 95\% posterior confidence interval for the value of the function at each of the observed points $x_i$ (again, superimposed on top of the scatter plot of the data itself).  Choose $\tau^2_2$ to be very small, say $10^{-6}$, and choose $(b, \tau^2_1)$ that give a sensible-looking answer.\footnote{If you're bored with the utilities data, instead try the data in ethanol.csv, in which the NOx emissions of an ethanol engine are measured as the engine's fuel-air equivalence ratio (E in the data set) is varied.  Your goal would be to model NOx as a function of E using a Gaussian process. }
 
