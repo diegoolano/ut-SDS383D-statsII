@@ -429,7 +429,10 @@ y_it = mu + alpha_i + e_it
 #========================================================================================================================
 #========================================================================================================================
 #========================================================================================================================
-
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
 
 ####QUESTION 2
 #Price elasticity of demand
@@ -534,10 +537,14 @@ disp0 <- cheesedata %>% filter(disp == 0)
 disp1 <- cheesedata %>% filter(disp == 1)
 disp0.mu = mean(log(disp0$vol))
 disp1.mu = mean(log(disp1$vol))
+
 p <- ggplot(cheesedata, aes(disp,log(vol))) + geom_jitter() + geom_hline(yintercept = mean(log(cheesedata$vol)),col="red")
 p <- p +  geom_hline(yintercept = disp0.mu ,col="green") + annotate("text", x = 1, y=12, label="Disp = 0, 1968 obs", col="green")
 p <- p +  geom_hline(yintercept = disp1.mu ,col="blue") + annotate("text", x = 2, y=12, label="Disp = 1, 3587 obs", col="blue")
 p
+
+
+#Confounding issue of Sales Week causing price by volume to be shifted on display
 
 lmQgivenD = lm( log(vol) ~ disp, data=cheesedata)
 summary(lmQgivenD)   #Yes there is an effect of Display on Demand Overall
@@ -667,6 +674,33 @@ resid = ranef(hlm3, condVar = T)
 dotplot(resid,scales=list(cex=c(.5,.5)),layout=c(3,1),main=T, main.title='Random Effects by by Store',)
 
 
+#4) Hierarchical approach using interaction of store/price as ewll  ( JAMES SHOWED IN CLASS .. look at cheese_lmer.R)
+hlm4 = lmer(log(vol) ~ log(price) + disp + log(price):disp | store , data=cheesedata)
+
+summary(hlm4)  #shows restricted maximum likelihood, assumes Sigma is full rank 
+
+#our model is 
+Bi = ( intercept, log price, display, log(price)/display:interaciton )
+Bi ~ N( mu, Sigma )  
+
+#14 parameter ( 4 on diagonl, 6 off, and 4 for mean vector mu)
+#for 88 groups
+
+#inverse wishart 
+#possible priors
+#- use MLE covariance matrix, as aempirical bayes 
+diffuse parameter for identity matrix 
+
+
+coef(hlm4)  #per store intercepts vary along with slopes for price and display
+fixef(hlm4)  
+#(Intercept)  log(price)       disp1 
+# 10.4916513  -2.3497484   0.1723921  
+ranef(hlm4) #pe
+
+
+
+
 #####3   hierarchical model with Gibbs sampling to fit model
 #========================================================================================================================
 # log(vol) ~ log(a) + B log(p) + disp    | for each group Store t and repeated observation i
@@ -675,19 +709,10 @@ x = log(cheesedata$price)
 
 cheese_group_stats_all <- cheesedata %>% group_by(store)  %>% summarise(n = n(), p_mu = mean(log(price)), p_sd = sd(log(price)), q_mu = mean(log(vol)), q_sd = sd(log(vol)))
 
-#Adapted partially from Jennifer and Giorgio's code
-#particularly for idea setup of 3 dimensional Bi and sampling of inverse wishart
-
-#install.packages("MCMCpack")
-#install.packages("LaplacesDemon")
-require(MCMCpack)  						#Sample from Inverse Wishart.
-require(mvtnorm)							#Sample from Multivariate Normal.
-require(LaplacesDemon)						#Sample from Normal-Inverse-Wishart
-
 
 p = 3  #number of paramters ( intercept, price, disp ) for each group
 # Run the Gibbs Sampler
-Niter <- 11000
+Niter <- 1000
 burnin <- 100
 thin <- 2
 
@@ -783,3 +808,139 @@ par(mfrow=c(1,3))
 plot(Bi.post.mean[,1])
 plot(Bi.post.mean[,2])
 plot(Bi.post.mean[,3])
+
+
+
+#==========================
+'''
+Demand Curves
+ Q = K * P ^ B                        ( which can be rewritten logQ = logK + B * logP )
+    model :   K  and B change w/ 
+        - store
+        - disp
+        - intraction bt store/disp
+
+      - Beta ( would allow change between Beta and Price)
+
+Net Profit = Quantity ( Price - UnitCost )
+      N(P) = Q(P-C)
+           = KP^B ( P - c)
+ 
+to optimize N(P):
+     set N\'(P) = 0
+     P* = g(K,B)        ( g gives optimal price for given K and B which you get from posteriors ) 
+                          this allows you to give a posterior distribution of optimal price !!
+  
+
+Calculate posterior probabilty of a model ( likelihood )
+* Bayesian Model Selection.  
+
+* propogation of uncertainity 
+
+#FOR MONDAY FULL BAYEs, HALF CAUCHY, OPTIMIZATION OF PRICE
+'''
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+
+####QUESTION 3
+#A hierarchical probit model via data augmentation  (polls data)
+#  - a Bayesian treatment of probit regression (similar to logistic regression) 
+#  - using the trick of data augmentation — 
+#  -       that is, introducing "latent variables" that turn a hard problem into a much easier one
+
+# "polls.csv" has the results of several political polls from the 1988 U.S. presidential election. 
+#  The outcome of interest is whether someone plans to vote for George Bush (senior, not junior). 
+#  There are several potentially relevant demographic predictors here, including the respondent’s state of residence. 
+#  ** The goal is to understand how these relate to the probability that someone will support Bush in the election. 
+
+#  You can imagine this information would help a great deal in poll reweighting and aggregation (ala Nate Silver).
+
+# Use Gibbs sampling, together with the Albert and Chib data augmentation trick, to fit a hierarchical probit model of the following form:
+#   Pr(y_ij = 1) = F(z_ij)
+#     z_ij = μ_i + (x_ij)Tb.
+
+#   where 
+#      y_ij is the response (Bush=1, other=0) for respondent j in state i; 
+#      F(·) is the probit link function, i.e. the CDF of the standard normal distribution; 
+#      μi is a state-level intercept term; 
+#      xij is a vector of respondent- level demographic predictors; and b is a vector of state-invariant regression coefficients.
+
+#Notes:
+#1. There are severe imbalances among the states in terms of numbers of survey respondents! 
+#         Following the last problem, the key is to impose a hierarchical prior on the state-level intercepts.
+#2. The data-augmentation trick from the Albert and Chib paper above is explained in many standard references on Bayesian analysis. 
+#         If you want to get a quick introduction to the idea, you can consult one of these. 
+#         A good presentation is in Section 8.1.1 of "Bayesian analysis for the social sciences" by Simon Jackman, available as an ebook through lib.utexas.edu.
+          #related-ish presentation: http://www.lawschool.cornell.edu/SELS/upload/Jackman-Part2.pdf
+          #http://jackman.stanford.edu 
+
+#SO BOOKS TO GET ARE: Gelman, Andrew. Bayesian data analysis.   (2014)   and Simon Jackman. Bayesian analysis for the social sciences ( 2009 )
+#3. You are welcome to use the logit model instead of the probit model. 
+#         If you do this, you’ll need to read the following paper, rather than Albert and Chib: 
+#         Polson, N.G., Scott, J.G. and Win- dle, J. (2013). Bayesian inference for logistic models using Polya-Gamma latent variables. J. Amer. Statist. Assoc. 108 1339–1349.
+
+pollsdata = read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/exercise4/polls.csv", header=TRUE)
+
+
+
+###############
+#04/03 class
+'''
+halft.R
+a = 3
+NMC = 10000
+
+10000 normals time 10000 inverse gamma  ( t3  via redundant t)
+
+shows via monte carlo that the redundant parameterization corresponds to the initial one
+
+schools_halfcauchy.R    #LOOK AT THIS FOR HIS FULL BAYESIAN SOLUTION TO CHEESE
+
+Half Cauchy is better than Inverse Gamma cause it doesn't force tau.sq to zero!! <--- number one reason why half cauchy is better than inverse gamma 
+#half cauchy better than normal because normal decays too slow
+'''
+
+
+
+
+
+
+################################################################################
+#Rob Tibshirani Lecture ( department of biomedical data sciences and statistics )
+#Some Progress and Challenges in Biomedical Data Science
+#google index
+
+#Livia Eberlin presented Rob 
+#deeplearning, sparse modelling
+#hal varian, google chief economist
+#stochastic gradient descent
+#mentioned Bengio Deep Learning new book ( from last 6)
+#DL good for data with spatial organization 
+
+#3 Personalized medicine | 
+#   --> find patients like our current one ( who have similar diseases ) and then see how they have done with certain drugs related to a disease the initial person has
+#   --> have to be careful because things aren't randomized ( maybe all super sick patients got one pill, while others got anohter... need to infer how drugs where given!)
+
+#a sparse set of features. Lasso **** "glmnet"   ***** (convex optimization problem)
+#| idea of having a budget of penalty  for your weights ( otherwise you could overfit easy).. Least squares with a budget
+#absolute value of penalty is what gives you sparsity...
+
+#for continous problems "relaxed lasso" can be good
+
+#cancer detection is not a symmetric loss situation (its way worse to classify cancer as not cancer than vice versa so your loss function)
+
+#challenge ob absentations ( when should the prediction ssy I' don't know.)
+#look into isolation forests and causal random forests ( paper by: ahey, imbens, wager )
+
+#supervised learning via the lasso
+###############################################
+
+
+
+
+
