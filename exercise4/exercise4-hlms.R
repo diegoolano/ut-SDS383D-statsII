@@ -425,7 +425,7 @@ y_it = mu + alpha_i + e_it
         #projectuclid.org 
         
         
-#For LME4 version for cheese data  , first with mle, then with gibbs
+
 #========================================================================================================================
 #========================================================================================================================
 #========================================================================================================================
@@ -473,14 +473,21 @@ y_it = mu + alpha_i + e_it
 #4. 
 
 #========================================================================================================================
+rm(list = ls())
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(mosaic)
+library(lme4)
 cheesedata = read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/exercise4/cheese.csv", header=TRUE)
 dim(cheesedata)                   ## 5555 obs x 4 cols
-length(unique(cheesedata$store)) ## 88 stores
+length(unique(cheesedata$store))  ## 88 stores
 
-
-#add week, City and Chain variables, and make disp binary
+##EXPLORATORY PHASE
+#add week 
 cheesedata <- cheesedata %>% group_by(store) %>% mutate(week = row_number())
           
+#add City and Chain variables  ( i didn't end up using these as factors but I wanted to get an idea of things)
 cities <- str_split(cheesedata$store,pattern = " - ")
 cheesedata$city <- ""
 for(i in 1:length(cities)){ cheesedata[i,]$city <- str_trim(cities[i][[1]][1]) }
@@ -490,6 +497,7 @@ cheesedata$chain <- ""
 for(i in 1:length(cities)){  cheesedata[i,]$chain <- str_trim(cities[i][[1]][2])}
 cheesedata$chain <- factor(cheesedata$chain)
 
+#make disp binary
 cheesedata$disp <- factor(cheesedata$disp)
 summary(cheesedata)
 #                              store          price            vol              disp                        city             chain     
@@ -501,16 +509,25 @@ summary(cheesedata)
 # BUFFALO/ROCHESTER - WEGMANS     :  68   Max.   :4.642   Max.   :148109   Max.   :1.0000   BOSTON            : 190   RALPHS    : 136  
 # (Other)                         :5147                                                     (Other)           :4302   (Other)   :3190
 
-sort(summary(cheesedata$chain),decreasing = T)
+sort(summary(cheesedata$chain),decreasing = T)  #Most to least common chains: WINN DIXIE, KROGER CO, FOOD LION, PUBLIX , etc
 length(levels(cheesedata$chain))  #50 Chain Stores
 
-sort(summary(cheesedata$city),decreasing = T)
+sort(summary(cheesedata$city),decreasing = T)   #Most to least common cities:  CHARLOTTE, DALLAS/FT. WORTH, BALTI/WASH, SYRACUS
 length(levels(cheesedata$city))   #46 Cities
 
 cheese_group_stats_all <- cheesedata %>% group_by(store)  %>% summarise(n = n(), p_mu = mean(price), p_sd = sd(price), q_mu = mean(vol), q_sd = sd(vol))
 head(cheese_group_stats_all)
-summary(factor(cheese_group_stats_all$n))   #notice not all have same out of observations
-# #obs   52 61 68 
+#                         store     n     p_mu       p_sd     q_mu      q_sd
+# 1   ALBANY,NY - PRICE CHOPPER    61 2.758409 0.31226344 1363.246 1385.2279
+# 2         ATLANTA - KROGER CO    61 2.827948 0.39100787 5077.607 1505.4671
+# 3        ATLANTA - WINN DIXIE    61 2.667663 0.05380711 2956.754  463.3081
+# 4 BALTI/WASH - GIANT FOOD INC    61 3.682421 0.24693757 4958.574 1973.3754
+# 5        BALTI/WASH - SAFEWAY    68 3.883288 0.37420494 4458.515 1939.1340
+# 6    BALTI/WASH - SUPER FRESH    68 3.691940 0.33196917 1489.147  972.4967
+
+
+summary(factor(cheese_group_stats_all$n))   #notice not all have same out of observations, but relatively close 
+# #obs   52 61 68                    
 # #groups 1 59 28
 
 g61 = cheese_group_stats_all %>% filter(n == 61)
@@ -518,10 +535,10 @@ g61m = colMeans(g61[,c(2:6)])
 g68 = cheese_group_stats_all %>% filter(n == 68)
 g68m = colMeans(g68[,c(2:6)])
 
-#outlier in number of observations
-cheese_group_stats_all %>% filter(n == 52)   #DALLAS/FT. WORTH - WINN DIXIE   
+#see outlier in number of observations
+cheese_group_stats_all %>% filter(n == 52)   #DALLAS/FT. WORTH - WINN DIXIE   (so maybe less confidence for this one)
 
-#see overall means / group means
+#IMAGE OF  overall means / group means
 p <- ggplot(cheese_group_stats_all, aes(n, log(q_mu))) + geom_point() 
 p <- p + geom_hline(yintercept = mean(log(cheesedata$vol)),col="red") 
 p <- p + geom_point(data = as.data.frame(t(g61m)), colour="blue",size=3)
@@ -538,25 +555,25 @@ disp1 <- cheesedata %>% filter(disp == 1)
 disp0.mu = mean(log(disp0$vol))
 disp1.mu = mean(log(disp1$vol))
 
+#IMAGE to show a little more detail about difference in groups by disp
 p <- ggplot(cheesedata, aes(disp,log(vol))) + geom_jitter() + geom_hline(yintercept = mean(log(cheesedata$vol)),col="red")
 p <- p +  geom_hline(yintercept = disp0.mu ,col="green") + annotate("text", x = 1, y=12, label="Disp = 0, 1968 obs", col="green")
 p <- p +  geom_hline(yintercept = disp1.mu ,col="blue") + annotate("text", x = 2, y=12, label="Disp = 1, 3587 obs", col="blue")
 p
 
+##Confounding issue of Sales Week causing price by volume to be shifted on display
+plot(log(cheesedata$price),log(cheesedata$vol))
 
-#Confounding issue of Sales Week causing price by volume to be shifted on display
 
 lmQgivenD = lm( log(vol) ~ disp, data=cheesedata)
 summary(lmQgivenD)   #Yes there is an effect of Display on Demand Overall
 
 lmQgivenDbyStore = lm( log(vol) ~ disp + store, data=cheesedata)
-summary(lmQgivenDbyStore)  #Yes, and relatively stable
+summary(lmQgivenDbyStore)  #Yes its different per store
 
 
 #https://www.stat.ubc.ca/~jenny/STAT545A/block09_xyplotLattice.html
-#xyplot(log(vol) ~ log(price) | store, data=cheesedata, type = c("p", "r"),  group = disp, auto.key = TRUE)    
-
-#PLOT WHICH SHOWS DIFFERENCE BY DISP PER GROUP
+#IMAGE PLOT WHICH SHOWS DIFFERENCE BY DISP PER STORE
 xyplot(log(vol) ~ log(price) | store, data=cheesedata, type = c("p", "r"),  group = disp, auto.key = list(lines = TRUE), par.strip.text=list(cex=.5))
 
 #library(hexbin)
@@ -565,10 +582,9 @@ xyplot(log(vol) ~ log(price) | store, data=cheesedata, type = c("p", "r"),  grou
 #??stripplot
 #barchart(prop.table(postdoc, margin = 1), xlab = "Proportion",auto.key = list(adj = 1))
 
-strip.default
 
 
-#1) non HLM approaches 
+#1) non HLM approaches to understanding relation
 #========================================================================================================================
 lm0 <- lm(log(vol) ~ log(price) , data=cheesedata)                #complete pooling, not taking store into account or display ad
 lm1 <- lm(log(vol) ~ log(price) + disp , data=cheesedata)         #complete pooling, not taking store into account, but considering display
@@ -582,9 +598,6 @@ lm7a <- lm(log(vol) ~ log(price) + disp + store + disp:store, data=cheesedata)  
 lm7b <- lm(log(vol) ~ log(price) + disp + store + disp:log(price), data=cheesedata)   #since lm2 worked well, add interactions
 lm7c <- lm(log(vol) ~ log(price) + disp + store + store:log(price), data=cheesedata)   #since lm2 worked well, add interactions
 lm7d <- lm(log(vol) ~ log(price) + disp + store + disp:store + disp:log(price) + store:log(price), data=cheesedata)   #since lm2 worked well, add interactions
-
-
-
 
 summary(lm0)
 summary(lm1)
@@ -619,7 +632,7 @@ anova(lm7d,lm2)
 
 #2) LMER VERSION
 #========================================================================================================================
-#1 Hierarchical linear model; which only allows intercept among stores to change .
+#A. Hierarchical linear model; which only allows intercept among stores to change .
 hlm1 = lmer(log(vol) ~ log(price) + disp + (1 | store), data=cheesedata)
 summary(hlm1)
 
@@ -634,7 +647,7 @@ boxplot(resid(hlm1) ~ store, data=cheesedata, las=2, cex.axis=.3, main='residual
 abline(a=2,b=0,col='red',lty=2)
 abline(a=-2,b=0,col='red',lty=2)
 
-#2 so Hierarchical linear model; which allows intercept and slopes to vary among stores to change .
+#B. so Hierarchical linear model; which allows intercept and slopes to vary among stores to change .
 hlm2 = lmer(log(vol) ~ log(price) + disp + (1 + log(price) | store), data=cheesedata)
 summary(hlm2)
 
@@ -649,7 +662,7 @@ abline(a=2,b=0,col='red',lty=2)
 abline(a=-2,b=0,col='red',lty=2)
 
 
-#3 so Hierarchical linear model; which allows intercept and slopes to vary among stores to change .
+#C. so Hierarchical linear model; which allows intercept and slopes to vary among stores to change .
 hlm3 = lmer(log(vol) ~ log(price) + disp + (1 + log(price) + disp | store), data=cheesedata)
 summary(hlm3)
 
@@ -674,13 +687,15 @@ resid = ranef(hlm3, condVar = T)
 dotplot(resid,scales=list(cex=c(.5,.5)),layout=c(3,1),main=T, main.title='Random Effects by by Store',)
 
 
-#4) Hierarchical approach using interaction of store/price as ewll  ( JAMES SHOWED IN CLASS .. look at cheese_lmer.R)
+#D) Final Hierarchical approach using interaction of store/price as ewll  ( Professor Scott showed this in class .. see cheese_lmer.R)
 hlm4 = lmer(log(vol) ~ log(price) + disp + log(price):disp | store , data=cheesedata)
 
 summary(hlm4)  #shows restricted maximum likelihood, assumes Sigma is full rank 
 
+#Notes from class 
 #our model is 
-Bi = ( intercept, log price, display, log(price)/display:interaciton )
+'''
+Bi = ( intercept, log price, display, log(price):display interaciton )
 Bi ~ N( mu, Sigma )  
 
 #14 parameter ( 4 on diagonl, 6 off, and 4 for mean vector mu)
@@ -690,7 +705,7 @@ Bi ~ N( mu, Sigma )
 #possible priors
 #- use MLE covariance matrix, as aempirical bayes 
 diffuse parameter for identity matrix 
-
+'''
 
 coef(hlm4)  #per store intercepts vary along with slopes for price and display
 fixef(hlm4)  
@@ -698,116 +713,192 @@ fixef(hlm4)
 # 10.4916513  -2.3497484   0.1723921  
 ranef(hlm4) #pe
 
-
-
-
 #####3   hierarchical model with Gibbs sampling to fit model
 #========================================================================================================================
-# log(vol) ~ log(a) + B log(p) + disp    | for each group Store t and repeated observation i
+#So our model is:  log(Q_it) = log(a_i) + log(price_it) + disp_it + disp_it*log(price_it)
+#This accounts for seperate store_intercepts + seperate store price slopes + seperate slopes based on display + interactions for store disp/prices
+#
+
+rm(list = ls())
+library(dplyr)
+require(MCMCpack)  						#Sample from Inverse Wishart.
+require(mvtnorm)							#Sample from Multivariate Normal.
+require(MASS)                 #Generalized invers
+
+#Hierarchical model:
+#			y_it ~ N(X_it B_i, sig.sq)
+#				where 
+#				y_it = log(Q_it)    
+#				X_it = [1	log(price_it) disp_it log(price_it)*disp_it] for store i at time t.
+#					
+#		   	       B_i ~ N(mu,Sigma)
+#		  	(mu,Sigma) ~ Normal-Inv-Wishart(m,V,C,d)     #unknown hyper priors m,V,C,d:   mean, covariance, scale and df hyperpriors for N-I-W.
+#			      sig.sq ~ 1/sig.sq (Jeffrey's Prior)
+
+cheesedata = read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/exercise4/cheese.csv", header=TRUE)
 y = log(cheesedata$vol)
-x = log(cheesedata$price)
+X = as.data.frame(model.matrix(log(vol) ~ log(price) + disp + log(price)*disp,data=cheesedata))		#Covariates for all stores i, observations t
 
-cheese_group_stats_all <- cheesedata %>% group_by(store)  %>% summarise(n = n(), p_mu = mean(log(price)), p_sd = sd(log(price)), q_mu = mean(log(vol)), q_sd = sd(log(vol)))
+#use OLS to get initial overall mu estimates as per James recommendations!
+ols = lm(log(vol) ~ log(price) + disp + log(price)*disp,data=cheesedata)
 
+#Noninformative hyperpriors for Normal-Inverse-Wishart :  muB,V,C,d.
+p = ncol(X)    #num predictors
+muB = ols$coef 
+V = diag(p)
+C = diag(p)
+d = p+1        #one degree of freedom more than number of predictors
 
-p = 3  #number of paramters ( intercept, price, disp ) for each group
-# Run the Gibbs Sampler
-Niter <- 1000
-burnin <- 100
-thin <- 2
+n = length(y)  								                                      #Total observations.
+ns = cheesedata %>% group_by(store)  %>% summarise(n = n()) %>% .$n	#Observations for each group 
+s = length(unique(cheesedata$store))				        	              #Number of groups (stores).
 
-#hyperparamter priors for m,v,C,d.
-m = rep(0,3)   #mu is 0 for our three paramters
-v = 1          #variation is 1 
-C = diag(p)    #parameters for inverse wishart
-d = p+1        #""
+#MCMC vars
+iter=1100
+burn=100
+thin=2
 
-
-n = length(y)  							                	#Number of observations.
-nt = cheese_group_stats_all$n	                #Sample sizes for each group (# time points per store).
-s = length(unique(cheesedata$store))					#Number of groups (stores).
-ybar = cheese_group_stats_all$q_mu            #Sample group means.
-
-#Sample group means for each x covariate.
-X = as.data.frame(model.matrix(log(vol) ~ 1 + log(price) + disp,data=cheesedata))  #Covariates for all i,t
-idx = cbind.data.frame(store=cheesedata$store,  storenum=as.numeric(cheesedata$store), week=cheesedata$week)  
-Xbar = data.frame(matrix(nrow=s,ncol=p))
-for (k in 1:p){ Xbar[,k] = aggregate(X[,k],list(idx$store),mean)$x }
-Xbar = as.matrix(Xbar)
-X = as.matrix(X)
-
-#Set up data structures to hold Gibbs samples from posteriors.
-Bi = array(0,dim=c(s,p,Niter))		# Each slice is a (88x3) matrix, with each column as a vector of covariates for each store. 
-                                  # dim(Bi) 88     3 11000
-                        					# Each row stores akk the results of the iterations of the Gibbs sampler (1 x 3 x Niter)
-
-sig.sq = rep(0,Niter)	      			#Vector of posterior sig2.sq samples
-mu = matrix(0,Niter,p)				    #mu ( p x 1 ) for each iteration of Gibbs Sampler
-Sigma = array(0,dim=c(p,p,Niter))	#Each Sigma[,,1] is a pxp Gibbs sample of Sigma matrix.
-
-#Initialize each element of chain.
-Bi[,,1] = rep(0,s*p)
-sig.sq[1] = 1
-mu[1,] = rep(mean(y),p)
-Sigma[,,1] = diag(p)
-
-#Iterate through sampler.
-for (k in 2:iter){
-  
-  #Update B_i values for each store.
-  
-  SigInv = solve(Sigma[,,k-1])	#Prechache Sigma inverse.
-  
-  for (j in 1:s){	#Loop through stores.
-    Xi = X[which(j==idx$storenum),]	#Pull only Xi values for current store.
-    yi = y[which(j==idx$storenum)]	#Pull out responses for current store.
-    Bi.var = solve( solve(SigInv) + (nt[j]/sig.sq[k-1]) * t(Xi) %*% Xi	)
-    Bi.mean = Bi.var %*% (SigInv %*% mu[k-1,] + (nt[j]/sig.sq[k-1]) * t(Xi) %*% yi )
-    
-    Bi[j,,k] = rmvnorm(1,Bi.mean,Bi.var)  
-  }
-  
-  #Update sig.sq values.
-  Bi.lookup = Bi[idx$store,,k]	#Finds Bi for each yi, based on store number.
-  SS = sum((y - X %*% t(Bi.lookup))^2)
-  sig.sq[k] = 1 / rgamma(1,n/2,.5 * SS)
-  
-  #Update mu and Sigma values.
-  Bi.bar = colMeans(Bi[,,k])						#Precache.
-  S = t(Bi[,,k] - Bi.bar)	%*% (Bi[,,k] - Bi.bar)	#Precache.
-  
-  mn = (v*m + s*Bi.bar) / (v + s)	#Posterior NIW mean parameter.
-  vn = v + s						#Posterior cov parameter.
-  dn = d + s						#Posterior df parameter.
-  Cn = C + S + (v*s / (v+s)) * (Bi.bar - m) %*% t(Bi.bar - m)		#Posterior scale matrix.
-  
-  niv.draw = rnorminvwishart(n=1,mn,vn,Cn,dn)	#Draw from Normal-Inverse-Wishart.
-  Sigma[,,k] = niv.draw$Sigma
-  mu[k,] = niv.draw$mu
+#Set up yi, Xi, Wi matrices for each store.
+yi = list()
+Xi = list()
+Wi = list()
+for (i in 1:s){	
+  yi[[i]] = y[which(as.numeric(cheesedata$store)==i)]
+  Xi[[i]] = as.matrix(X[which(as.numeric(cheesedata$store)==i),])
+  Wi[[i]] = Xi[[i]]
 }
 
-#Thin and Burn results
-Bi = Bi[,,seq(1+burnin,dim(Bi)[3],by=thin)]
-Sigma = Sigma[,,seq(1+burnin,dim(Sigma)[3],by=thin)]
-mu = mu[seq(1+burnin,nrow(mu),by=thin),]
-sig.sq = sig.sq[seq(1+burnin,length(sig.sq),by=thin)]
+#Set up data structures to hold the Gibbs samples from the posteriors.
+Beta = matrix(0,p,iter)			    	#Each entry is a (px1) gibbs sample.  (Constant across store.)                4 x runs
+bi  = array(0,dim=c(p,s,iter))		#Each gibbs sample slice is a (sxp) matrix, with p covariates for s stores.   4 x 88 x runs
+Sigma = array(0,dim=c(p,p,iter))	#Each gibbs sample slice is a (pxp) matrix.                                   4 x 4  x runs
+sig.sq = rep(0,iter)			 	      #Each sig.sq value is a gibbs sample.                                         runs x 1
+
+#Initialize first element of chain.
+Beta[1] = 0
+bi[,,1] = rep(0,s*p)
+sig.sq[1] = 1
+Sigma[,,1] = diag(p)
+
+#Run Gibbs sampler.
+for (k in 2:iter){
+  ### Update bi for each store
+  if(k %% 100 == 1){ print(k) }
+  SigInv = solve(Sigma[,,k-1])  
+  SS.Beta.1 = 0	#sum(over stores) Xi^T * Xi           for Beta update
+  SS.Beta.2 = 0	#sum(over stores) Xi^T * (yi + Wi*bi) for Beta update.
+  SS.sig.sq = 0	#sum(over stores) Xi^T(yi-Wi*bi)      for sig.sq update.
+  SS.Sigma  = 0	#sum(over stores) bi * bi^T           for Sigma update.
+  
+  for (j in 1:s){
+    X.j = Xi[[j]]
+    y.j = yi[[j]]
+    W.j = Wi[[j]]
+    YmXB = y.j - X.j %*% Beta[,k-1]   #precache    
+    Var = solve(SigInv + (1/sig.sq[k-1]) * crossprod(W.j) ) #prior precision
+    mean = (1/sig.sq[k-1]) * Var %*% crossprod(W.j,YmXB)    #data precision 
+    
+    #for current iteration k, and store j
+    #b ~ MVN(1/sig.sq[k-1] * solve(SigInv + (1/sig.sq[k-1]) * (Wj)T(Wj)) %*% (YmXB)T(Wj) , solve(SigInv + (1/sig.sq[k-1]) * (Wj)T(Wj)) )  
+    bi[,j,k] = rmvnorm(1,mean,Var)    #update bi for store j and iteration k
+    
+    #update SumSqure values to be used later in Beta, sig.sq, and Sigma updates.
+    SS.Beta.1 =+ crossprod(X.j)
+    SS.Beta.2 =+ crossprod(X.j, y.j - W.j %*% bi[,j,k])		
+    SS.sig.sq =+ crossprod(y.j - X.j %*% Beta[,k-1] - W.j %*% bi[,j,k])
+    SS.Sigma  =+ tcrossprod(bi[,j,k])
+  } 
+  
+  VInv = solve(V)  
+  b_var = solve(VInv + (1/sig.sq[k-1]) * SS.Beta.1)
+  b_mean = b_var %*% ( VInv %*% muB + (1/sig.sq[k-1]) * SS.Beta.2)
+  Beta[,k] = rmvnorm(1,b_mean,b_var)  ### Update Beta.
+  
+  sig.sq[k] = 1 / rgamma(1,n/2, SS.sig.sq/2) ### Update sig.sq.
+  
+  dn = d + s
+  Cn = C + SS.Sigma
+  Sigma[,,k] = riwish(dn,Cn)   ### Update Sigma.
+} 
+
+#Burn beginning observations and thin observations to just keep every other "thin" observation.
+bt_seq = seq(burn,iter,by=thin)
+bi = bi[,,bt_seq]
+Sigma = Sigma[,,bt_seq]
+sig.sq = sig.sq[bt_seq]
+Beta = Beta[,bt_seq]
 
 #Calculate posterior means.
-Bi.post.mean = apply(Bi,c(1,2),mean)
-Sigma.post.mean = apply(Sigma,c(1,2),mean)
-mu.post.mean = colMeans(mu)
-sig.sq.post.mean = mean(sig.sq)
+bi.pm = apply(bi,c(1,2),mean)
+Beta.pm = rowMeans(Beta)   
+sig.sq.pm = mean(sig.sq)
+Sigma.pm = apply(Sigma,c(1,2),mean)
 
-#Look at Poster results.
-Bi.post.mean
-Sigma.post.mean
-mu.post.mean
-sig.sq.post.mean
 
-par(mfrow=c(1,3))
-plot(Bi.post.mean[,1])
-plot(Bi.post.mean[,2])
-plot(Bi.post.mean[,3])
+#Now show demand curves for each store.
+# Add ad and non-ad demand curves per store
+#
+#  	AD = NO group:    exp(log(Intercept)) * x ^ (log(Price)))
+#		AD = YES group: 	exp(log(Intercept + disp) * x ^ (log(Price) - log(Price):disp))
+#                             log(price)     disp log(price):disp (Intercept)
+# Under model formulation:   AD = NO:	exp(log(B + Intercept_i))
+
+
+#Beta is the overall effect on each variable where as bi.pm is store specific 
+intrcpt 	= Beta.pm[1] + bi.pm[1,]   
+logp 	= Beta.pm[2] + bi.pm[2,]
+dsp 	= Beta.pm[3] + bi.pm[3,]
+logp.d 	= Beta.pm[4] + bi.pm[4,]
+
+#from hml
+overall_int_hlm = mean(intrcpt)
+overall_logp_hlm = mean(logp)
+overall_dsp_hlm = mean(dsp)
+overall_logp.d_hlm = mean(logp.d)
+
+#from ols
+overall_int = muB[[1]]
+overall_logp = muB[[2]] 
+overall_dsp = muB[[3]]
+overall_logp.d = muB[[4]]  
+
+
+
+#FIRST plot demand curve for a single store 
+par(mfrow=c(1,1))
+i = 1
+curstore =  cheesedata %>% filter( as.numeric(store) == i)
+curstore_wo_disp = curstore %>% filter( disp == 0)
+plot(vol ~ price, data=curstore, xlab=paste('Store',i),ylab='',col='red',xaxt='n',yaxt='n',main=paste('Store',i))  #Color all points red
+points(vol ~ price, col='blue',  data=curstore_wo_disp)    #Color 'disp = 0' points in blue.
+
+curve(exp(intrcpt[i])*x^(logp[i]), add=TRUE, col='blue')   #Fitted demand curve for disp=0 group at store i.
+curve(exp(intrcpt[i] + dsp[i])*x^(logp[i] + logp.d[i]), add=TRUE, col='red') #Fitted demand curve for disp=1 group at store i.
+
+curve(exp(overall_int)*x^(overall_logp), add=TRUE, col='purple', lty=2)
+curve(exp(overall_int + overall_dsp)*x^(overall_logp + overall_logp.d), add=TRUE, col='orange', lty=2)
+
+curve(exp(overall_int_hlm)*x^(overall_logp_hlm), add=TRUE, col='black', lty=2)
+curve(exp(overall_int_hlm + overall_dsp_hlm)*x^(overall_logp_hlm + overall_logp.d_hlm), add=TRUE, col='green', lty=2)
+
+legend('top','groups',c("Store Disp=0","Store Disp=1","Overall Disp=0 (OLS)", "Overall Disp=1 (OLS)", "Overall Disp=0 (HLM)", "Overall Disp=1 (HLM)"), lty = c(1,1,2,2,2,2),
+       col=c('blue','red','purple','orange','black','green'),ncol=1,bty ="n")
+
+#NOW Plot demand curve for all stores sorted by price
+sort.avg.price = as.numeric(cheesedata %>% group_by(store)  %>% summarise(avg_price = mean(price)) %>% arrange(desc(avg_price)) %>% .$store)
+par(mfrow=c(8,11))
+for (i in sort.avg.price){ 
+  curstore =  cheesedata %>% filter( as.numeric(store) == i)
+  curstore_wo_disp = curstore %>% filter( disp == 0)
+  plot(vol ~ price, data=curstore, xlab=paste('Store',i),ylab='',col='red',xaxt='n',yaxt='n',main=paste('Store',i))
+  points(vol ~ price, col='blue',  data=curstore_wo_disp)   #Add the 'AD = 0' points in blue.
+  
+  curve(exp(intrcpt[i])*x^(logp[i]), add=TRUE, col='blue')   #Fitted demand curve for disp=0 group at store i.
+  curve(exp(intrcpt[i] + dsp[i])*x^(logp[i] + logp.d[i]), add=TRUE, col='red') #Fitted demand curve for disp=1 group at store i.
+}
+
+
+
 
 
 
@@ -834,10 +925,7 @@ to optimize N(P):
 
 Calculate posterior probabilty of a model ( likelihood )
 * Bayesian Model Selection.  
-
 * propogation of uncertainity 
-
-#FOR MONDAY FULL BAYEs, HALF CAUCHY, OPTIMIZATION OF PRICE
 '''
 #========================================================================================================================
 #========================================================================================================================
@@ -924,7 +1012,7 @@ Half Cauchy is better than Inverse Gamma cause it doesn't force tau.sq to zero!!
 
 #3 Personalized medicine | 
 #   --> find patients like our current one ( who have similar diseases ) and then see how they have done with certain drugs related to a disease the initial person has
-#   --> have to be careful because things aren't randomized ( maybe all super sick patients got one pill, while others got anohter... need to infer how drugs where given!)
+#   --> have to be careful because things arent randomized ( maybe all super sick patients got one pill, while others got anohter... need to infer how drugs where given!)
 
 #a sparse set of features. Lasso **** "glmnet"   ***** (convex optimization problem)
 #| idea of having a budget of penalty  for your weights ( otherwise you could overfit easy).. Least squares with a budget
@@ -933,13 +1021,47 @@ Half Cauchy is better than Inverse Gamma cause it doesn't force tau.sq to zero!!
 #for continous problems "relaxed lasso" can be good
 
 #cancer detection is not a symmetric loss situation (its way worse to classify cancer as not cancer than vice versa so your loss function)
-
-#challenge ob absentations ( when should the prediction ssy I' don't know.)
+#challenge ob absentations ( when should the prediction ssy I dont know.)
 #look into isolation forests and causal random forests ( paper by: ahey, imbens, wager )
+
+#thoughts on Robs lecture 
+#desi-mass spectometry
+#how to create a classifier that says "i dont know"
+#critiques of a persons presentation can be a good way to come up with new ideas for research questions/suggesting improvements!
+
+#spatial smoothers for sharp discontinuity between neighbors
+#using neighboring pixels classes as potential features
+#fundamentally particle spaces are discrete states
+#you can exploit correlation along an axis if it is an "ordered" axis ( time, etc)
+
+#possibly using lasso to get potential features and then doing ols on that ( as opposed to doing classification and doing lasso )
+#winners curse problem
+
+#LOOKUP ** "adaptive lasso" (state of the art),  better than just standard lasso
+#
+#1) run ols, 
+#2) take absolute value of Betas, and 
+#3) then create penalities that are inverse to size of Beta
+#4) and now run lasso with these penalities.
+
+
 
 #supervised learning via the lasso
 ###############################################
 
+#0405  Normal Presentation For Bayes 
+# 1) explatory analysis
+# 2) simple model to show need for random effects
+# 3) full model with mcmc steps
+# 4) findings 
+
+
+####
+#Continued Cheese by Spencer (mira al codigo y al parte escrito !!!)
+
+#"Matrix"  package to handle sparse matrices 
+#Monday MLE version (lmer / glmer for polls)
+#Wednesday Polls Problem (fully bayes ) and Peer Review ( for cheese problem )
 
 
 
