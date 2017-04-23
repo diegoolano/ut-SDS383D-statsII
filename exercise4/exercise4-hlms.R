@@ -927,6 +927,24 @@ Calculate posterior probabilty of a model ( likelihood )
 * Bayesian Model Selection.  
 * propogation of uncertainity 
 '''
+###############
+#04/03 class
+'''
+halft.R
+a = 3
+NMC = 10000
+
+10000 normals time 10000 inverse gamma  ( t3  via redundant t)
+
+shows via monte carlo that the redundant parameterization corresponds to the initial one
+
+schools_halfcauchy.R    #LOOK AT THIS FOR HIS FULL BAYESIAN SOLUTION TO CHEESE
+
+Half Cauchy is better than Inverse Gamma cause it doesnt force tau.sq to zero!! <--- number one reason why half cauchy is better than inverse gamma 
+#half cauchy better than normal because normal decays too slow
+'''
+
+
 #========================================================================================================================
 #========================================================================================================================
 #========================================================================================================================
@@ -967,36 +985,670 @@ Calculate posterior probabilty of a model ( likelihood )
           #related-ish presentation: http://www.lawschool.cornell.edu/SELS/upload/Jackman-Part2.pdf
           #http://jackman.stanford.edu 
 
-#SO BOOKS TO GET ARE: Gelman, Andrew. Bayesian data analysis.   (2014)   and Simon Jackman. Bayesian analysis for the social sciences ( 2009 )
+#Related Books: Gelman, Andrew. Bayesian data analysis.   (2014)   and Simon Jackman. Bayesian analysis for the social sciences ( 2009 )
 #3. You are welcome to use the logit model instead of the probit model. 
 #         If you do this, you’ll need to read the following paper, rather than Albert and Chib: 
 #         Polson, N.G., Scott, J.G. and Win- dle, J. (2013). Bayesian inference for logistic models using Polya-Gamma latent variables. J. Amer. Statist. Assoc. 108 1339–1349.
 
 pollsdata = read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/exercise4/polls.csv", header=TRUE)
+#dim(pollsdata) 2193 x 10
+
+# head(pollsdata)
+#      org year survey bush state      edu    age female black weight
+# 1 cbsnyt    7   9158   NA    CT SomeColl 18to29      1     0    923
+# 2 cbsnyt    7   9158    1    PA     Bacc 30to44      1     0    558
+# 3 cbsnyt    7   9158    0    NJ       HS 65plus      1     0    448
+# 4 cbsnyt    7   9158    0    CT SomeColl 18to29      1     0    923
+
+#remove na's
+pollsdata <- pollsdata %>% filter( bush != "NA") %>% select(bush,state,edu,age,female,black,weight)
+#pollsdata$bush <- factor(pollsdata$bush)
+
+#> summary(pollsdata)
+#  bush         state            edu          age          female           black             weight    
+# 0: 891   CA     : 190   Bacc    :559   18to29:491   Min.   :0.0000   Min.   :0.00000   Min.   : 149  
+# 1:1124   NY     : 163   HS      :773   30to44:762   1st Qu.:0.0000   1st Qu.:0.00000   1st Qu.: 568  
+#          TX     : 129   NoHS    :216   45to64:480   Median :1.0000   Median :0.00000   Median : 841  
+#          FL     : 126   SomeColl:467   65plus:282   Mean   :0.5876   Mean   :0.07643   Mean   :1000  
+#          OH     : 101                               3rd Qu.:1.0000   3rd Qu.:0.00000   3rd Qu.:1137  
+#          PA     :  95                               Max.   :1.0000   Max.   :1.00000   Max.   :8562                                                              
+
+#Massive Difference in Number of Observations Per State!
+sort(summary(pollsdata$state),decreasing = T)
+#  CA  NY  TX  FL  OH  PA  IL  MI  NJ  VA    ....    DE  ND SD  MT  ID  NV  DC  NH  VT  WY 
+# 190 163 129 126 101  95  85  83  67  58             7   7  6   5   4   4   3   3   2   2 
+
+summary(sort(summary(pollsdata$state),decreasing = T))      
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 2.00   12.00   30.00   41.12   50.00  190.00 
+
+
+#what is weight?  Is it weights for the Betas?
+summary(pollsdata$weight)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 149     568     841    1000    1137    8562
+
+#order state by number of observations
+par(mfrow = c(1,2))
+pollsdata$state <- factor(pollsdata$state, levels = names(sort(summary(pollsdata$state),decreasing = T)))
+pollsdata$edu <- factor(pollsdata$edu, levels = c("NoHS","HS","SomeColl","Bacc"))
+
+plot(pollsdata$state, pollsdata$weight, main='weights per state')
+sts <- names(sort(summary(pollsdata$state),decreasing = T))
+plot(factor(sts,levels=sts), sort(summary(pollsdata$state),decreasing = T), col='red', lty=2, type="p",main='observations per state')
+lines(factor(sts,levels=sts), sort(summary(pollsdata$state),decreasing = T), col='red', lty=2)
 
 
 
-###############
-#04/03 class
+#FOR NOW DON'T INCLUDE WEIGHTS so use summary
+xtabs( ~ bush + state, data=pollsdata)
+
+
+#LOOK AT OVERALL DATA
+desc_stats_by_state <- pollsdata %>% group_by(state,bush) %>% summarise(n=n()) %>% mutate(pct = n/sum(n))
+head(desc_stats_by_state)
+
+bush_states <- desc_stats_by_state %>% filter(pct >= .5, bush==1) %>%  .$state          #BUSH WON 34 states
+#bush_states     #CA TX FL OH PA MI NJ VA WA GA TN NC MO IN AZ LA AL KY SC MS WV KS CT CO OK NE AR UT ND SD NV NH VT WY
+
+dukakis_states <- desc_stats_by_state %>% filter(pct >= .5, bush==0) %>%  .$state       #BUSH LOST 17 States
+#dukakis_states  #NY IL WI MA MN MD NM IA OR ME AR RI DE SD MT ID DC
+
+intersect(bush_states,dukakis_states)    #TIED IN TWO AR, SD
+desc_stats_by_state %>% filter(state %in% c("AR","SD"))
+#    state   bush     n   pct
+# 1     AR      0     6   0.5
+# 2     AR      1     6   0.5
+# 3     SD      0     3   0.5
+# 4     SD      1     3   0.5
+
+desc_stats_by_state$overall = 0
+desc_stats_by_state[desc_stats_by_state$state %in% bush_states,]$overall = 100
+
+#view BUSH by STATE
+ndf <- data.frame(desc_stats_by_state$state,desc_stats_by_state$overall)
+colnames(ndf) <- c("state","n")
+ggplot(desc_stats_by_state,aes(x=state,y=n,color=as.factor(bush))) + geom_point()  + geom_point(data=ndf,colour="red")   + ggtitle("bush ~ state")
+
+#view BUSH by AGE
+desc_stats_by_age <- pollsdata %>% group_by(age,bush) %>% summarise(n=n()) %>% mutate(pct = n/sum(n))
+pa <- ggplot(desc_stats_by_age,aes(x=age,y=n,color=bush)) + geom_line() + geom_point()   
+pa + ggtitle("bush ~ age  | across age groups more people say they'll vote for bush") 
+
+#view BUSH by black
+desc_stats_by_black <- pollsdata %>% group_by(black,bush) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) %>% arrange(black,desc(n))
+pb <-ggplot(desc_stats_by_black,aes(x=black,y=n,color=as.factor(bush))) + geom_point(shape = 21, size = 10, stroke = .1)   + geom_text(aes(label=str_c(pct,"%"))) 
+pb + ggtitle("bush ~ black  |  21.4% of blacks say they'd vote for bush.  58.6 of nonblacks say they would")
+
+#view BUSH by edu
+desc_stats_by_edu <- pollsdata %>% group_by(edu,bush) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) %>% arrange(edu,desc(n))
+pe <- ggplot(desc_stats_by_edu,aes(x=edu,y=n,color=as.factor(bush))) + geom_point(shape = 21, size = 10, stroke = .1) + geom_text(aes(label=str_c(pct,"%"))) 
+pe + ggtitle("bush ~ education | outside of No Highschool, people moreso say they'll vote for bush")
+
+#view BUSH by female
+desc_stats_by_female <- pollsdata %>% group_by(female,bush) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) %>% arrange(female,desc(n))
+pf <- ggplot(desc_stats_by_female,aes(x=female,y=n,color=as.factor(bush))) + geom_point(shape = 21, size = 10, stroke = .1) + geom_text(aes(label=str_c(pct,"%"))) 
+pf + ggtitle("bush ~ female | more women in sample.  54% would vote for bush.  For men its 57%")  
+
+
+#FACET VIEW TO SEE STATES by AGE / BUSH
+desc_stats_ab <- pollsdata %>% group_by(state,age,bush) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) 
+p <- ggplot(desc_stats_ab, aes(x=age,y=n) )  + geom_point(aes(color=as.factor(bush)))  #+ geom_text(aes(label=str_c(pct,"%")))
+p1a <- p + theme(axis.text.x = element_text(angle=90,size = 6)) + xlab("age") +ylab("Bush/number of obs") 
+p1 <- p1a + facet_wrap( ~ state, ncol=9)
+p1
+
+#FACET VIEW TO SEE STATES by AGE / EDUCATION
+desc_stats_ae <- pollsdata %>% group_by(state,age,edu) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) 
+p2 <- ggplot(desc_stats_ae, aes(x=age,y=n) )  + geom_point(aes(color=as.factor(edu)))  #+ geom_text(aes(label=str_c(pct,"%")))
+p2a <- p2 + theme(axis.text.x = element_text(angle=90,size = 6)) + xlab("age") +ylab("Education number of obs") 
+p2 <- p2a + facet_wrap( ~ state, ncol=9, scales = "free_y")
+p2
+
+#FACET VIEW TO SEE STATES by AGE / FEMALE
+desc_stats_af <- pollsdata %>% group_by(state,age,female) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) 
+p3 <- ggplot(desc_stats_af, aes(x=age,y=n) )  + geom_point(aes(color=as.factor(female)))  #+ geom_text(aes(label=str_c(pct,"%")))
+p3a <- p3 + theme(axis.text.x = element_text(angle=90,size = 6)) + xlab("age") +ylab("Female number of obs") 
+p3 <- p3a + facet_wrap( ~ state, ncol=9, scales = "free_y")
+p3
+
+#FACET VIEW TO SEE STATES by AGE / BLACK
+desc_stats_abl <- pollsdata %>% group_by(state,age,black) %>% summarise(n=n()) %>% mutate(pct = round(n/sum(n),3)) 
+p4 <- ggplot(desc_stats_abl, aes(x=age,y=n) )  + geom_point(aes(color=as.factor(black)))  #+ geom_text(aes(label=str_c(pct,"%")))
+p4a <- p4 + theme(axis.text.x = element_text(angle=90,size = 6)) + xlab("age") +ylab("Black number of obs") 
+p4 <- p4a + facet_wrap( ~ state, ncol=9, scales = "free_y")
+p4
+
+#multiplot(p1,p2,p3,p4,cols=2)   #TOO HARD TO READ AND NOT TERRIBYLY CONVINCING
+
+#numeric
+#scatter/boxplot
+
+#binary
+#contingency table
+
+
+xyplot(as.factor(bush) ~ age | state, data=pollsdata, type = c("p", "r"),  group = female, auto.key = list(lines = TRUE), par.strip.text=list(cex=.5), superpose = F)
+
+#install.packages("GGally")
+library(GGally)
+forp <- pollsdata[,c(3,4,5,6)]
+sapply(forp,class)
+#forp$bush = factor(forp$bush)
+forp$age = factor(forp$age)
+forp$female = factor(forp$female)
+forp$black = factor(forp$black)
+
+ggpairs(forp)  #state has too many levels ( only allows for 15)  #ehhh
+
+
+
+#BETTER TO VISUALIZE LOG ODDs between MEN/WOMEN and voting Republican
+
+
+logit.m1 <- glm(bush ~ state, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m1)    #only NY, OH, VA, TN, AL, MD are significant,  AIC: 2747.4
+anova(logit.m1, test="Chisq")
+
+
+logit.m2 <- glm(bush ~ black, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m2)    #black significant, AIC: 2688.3
+
+logit.m3 <- glm(bush ~ edu, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m3)    #eduSomeColl significant, AIC: 2763.6
+
+logit.m4 <- glm(bush ~ female, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m4)    #female intercept significant, AIC: 2769.1
+
+logit.m5 <- glm(bush ~ age, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m5)    #age intercept significant, AIC: 2768.9
+
+
+logit.m6 <- glm(bush ~ black + edu + female + age, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m6)    #black, edu, age, but not female  significant, AIC: 2768.9
+
+logit.m7 <- glm(bush ~ state + black + edu + female + age, data=pollsdata, family = binomial(link='logit'))
+summary(logit.m7)    #state, black, edu, age, but not female  significant, AIC: 2768.9
+
+
+#glmer : http://stats.idre.ucla.edu/r/dae/mixed-effects-logistic-regression/ 
+#        http://stats.idre.ucla.edu/other/mult-pkg/introduction-to-generalized-linear-mixed-models/   ****
+#========================================================================================================================
+
+m1 <- glm(bush ~ state + black + edu + age + female, data = pollsdata, family = binomial(link="probit"))
+#
+
+
+#A. Hierarchical linear model; which only allows intercept among states to change .
+hlm1 <- glmer(bush ~ black + edu + age + female + (1 | state), data = pollsdata, family = "binomial") #(link="probit"), control = glmerControl(optimizer = "bobyqa"), nAGQ = 10)
+summary(hlm1)   #black, some college, age30-44
+
+
+# table of estimates with 95% CI
+se <- sqrt(diag(vcov(hlm1)))
+tab <- cbind(Est = fixef(hlm1), LL = fixef(hlm1) - 1.96 * se, UL = fixef(hlm1) + 1.96 * se)
+tab
+
+coef(hlm1)  #per state intercepts vary, but not coefficients for betas
+fixef(hlm1)  
+#(Intercept)       black       eduHS eduSomeColl     eduBacc   age30to44   age45to64   age65plus      female 
+#0.31198997 -1.74427022  0.23296729  0.51612594  0.31601970 -0.29221165 -0.06757393 -0.22514508 -0.09681328 
+ranef(hlm1) #random per state
+
+#sort by 
+ord <- order(summary(pollsdata$state,decreasing = T))
+sts <- names(sort(summary(pollsdata$state),decreasing = T))  #ORDER BY NUMBER OF SAMPLES
+plot(factor(rownames(ranef(hlm1)$state), levels=sts), ranef(hlm1)$state[[1]][ord])
+
+#PLOT CONFIDENCE INTERVALS AROUND 
+CI = confint(hlm1)[-c(1:2),]
+CI = cbind(CI,'50%'=rowMeans(CI))
+
+plotCI(x=CI[,3],li=CI[,1],ui=CI[,2],xlab='Coefficients',ylab='',main='Coefficient Estimates from LMER',xaxt='n')
+axis(1,at=1:length(colnames(X)[-1]),labels=colnames(X)[-1],cex.axis=.75)
+abline(h=0,lty=2,col='red')
+
+
+tf <- data.frame(tab)
+#ggplot(tf, aes(x = rownames(tf), y = Est)) + geom_linerange(aes(ymin = LL, ymax = UL)) + geom_line(size = 2) + ylim(c(0, 1))
+
+dotplot(ranef(hlm1,which = "state", condVar = TRUE), scales = list(y = list(alternating = 0)),   as.table=TRUE, auto.key=list(space="top", column=4, cex=.8, title="Sample size",   cex.title=1, lines=TRUE, points=FALSE))
+
+
+
+
+###CHECK JAMES VERSION OF POLLS DATA ON SITE ####  .. try albert and chib skills introducing Z
+
+#JENNIFER's version ( Read albert paper)  .. effective sample size ( autocorrelation )  to understand how to choose number of iterations
+
+#BECAREFUL sometimes if you just plot the intercept (mu_is) they are RELATIVE TO BASE LINE ( which is nonblack, no high school, young, etc)
+
+
+#READ UP ON MCMCPack
+vignette("MCMCpack")
+
+
+
+
+#=======================Notes on Albert and Chib trick ==============
 '''
-halft.R
-a = 3
-NMC = 10000
+IDEAL POINT MODEL ( used in Political Science to understand correlation structure for how legislative bodies vote! )
+SPATIAL MODEL OF VOTING (not in terms of geography but a socio-economic 2 dimensional space)
+axises f1 (x) and f2 (y)   ( liberal / conservative economic <--> on f1 ,  liberal / conservative social ^|| on f2)
 
-10000 normals time 10000 inverse gamma  ( t3  via redundant t)
 
-shows via monte carlo that the redundant parameterization corresponds to the initial one
+y = matrix  
+legislator i  as row
+bill j  as column ( lots of bills / less legislators  and how each voted in every cell)
 
-schools_halfcauchy.R    #LOOK AT THIS FOR HIS FULL BAYESIAN SOLUTION TO CHEESE
+y_ij = 1 if legislator i voted yes on bill j
 
-Half Cauchy is better than Inverse Gamma cause it doesn't force tau.sq to zero!! <--- number one reason why half cauchy is better than inverse gamma 
-#half cauchy better than normal because normal decays too slow
+bernouli probability model      ------------Z_ij--------------
+p(y_ij | alpha, beta, f) = Phi( alpha_j + beta_j1*fi1 + Bj2fi2)                        
+
+       where 
+        Phi = probit link function =  cdf of Normal Random Variable 
+        (fi1,fi2)  = ideal point for legislator i = factors
+(beta_j1, beta_j2) = loadins on each factor for bill j
+           alpha_j = measures overall popularity of bill j  ( super popular bills are less informative )
+
+This is a factor-probit model ( a factor model is just a regression model with unobserved covariates 
+                                  since you dont know the ideal points f1,f2 for every legislator or the bills b1/b2 )
+
+zj = (z_1j,z_2j ... z_nj)^T        ... legislator 1 to legislator n on bill j
+
+zj = alpha_j * 1vec + FBj
+   = alpha_j * 1vect + Fstar * Bjstar         ( infinite number of solutions because of rotation problem)
+
+where F = ( f_11, f_12 )
+             .. ... ..
+          ( f_n1, f_n2 )
+
+      Fstar = FA^T
+     Bjstar = ABj
+ and (A^T)A = I                Where A and A^T are orthogonal ( so their product is the identity matrix )
+
+F((A^T)A)Bj = FBj
+
+#FOR WEDNESDAY, BAYES VERSION OF POLLS ( Steven Jesse <---  polisci/stats at UT)
+
+
+#DO BAYES , DO LIN, DO CODE REVIEW.
+
+### CLASS 4/17
+
+## LOOK AT GENOMIC STUFF BY NEXT CLASS ( Data exploration , etc.. )
+
+#FACTOR ANALYSIS MODELS
+
+y_ij
+
+
+look at simplex plots ( to show three dimensions in two dimensions via a 2d triangle plot)
+you always want to try and find correlation in your residuals ( once there isnt any left , your residuals are just noise)
+
 '''
 
 
 
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+#========================================================================================================================
+
+####QUESTION 4
+#In droslong.csv, you will find a small subset of a time-course DNA microarray experiment. 
+# The gene-expression profiles of 2000 different genes in the fruit fly (Drosophila) genome are tracked over time during embryogenesis; 
+
+#  you are getting data on 14 of these genes, organized in three groups (think of these as marking which cellular pathway that gene influences). 
+
+# For each gene at each time point, there are 3 "technical replicates", 
+#     ie, three copies of the same biological material from the same fly, run through the same process to measure gene expression.
+
+# The question of interest is: how does each gene’s expression profile change over time, as the process of embryogenesis unfolds? 
+
+# Propose a hierarchical model for this data that properly reflects its structure. Fit this model using Gibbs sampling.
+
+#DATA EXPLORATION
+library("lattice")
+library("dplyr")
+library("ggplot2")
+droslong <- read.csv("/Users/dolano/htdocs/ut-james-scott/statsII/spring2017/exercise4/droslong.csv", header=TRUE)
+
+dim(droslong)    #504  6
+head(droslong)
+#        gene  group    label   log2exp time replicate
+# 1 142798_at group1 A_01.cel 15.448250    1         A
+# 2 142472_at group1 A_01.cel 15.343945    1         A
+# 3 143074_at group1 A_01.cel 15.412123    1         A
+
+summary(droslong)
+#         gene        group          label        log2exp            time       replicate
+# 141251_at: 36   group1:180   A_01.cel: 14   Min.   : 6.273   Min.   : 1.00   A:168    
+# 141311_at: 36   group2:180   A_02.cel: 14   1st Qu.:10.299   1st Qu.: 3.75   B:168    
+# 141404_at: 36   group3:144   A_03.cel: 14   Median :12.878   Median : 6.50   C:168    
+# 142200_at: 36                A_04.cel: 14   Mean   :12.483   Mean   : 6.50            
+# 142342_at: 36                A_05.cel: 14   3rd Qu.:15.318   3rd Qu.: 9.25            
+# 142356_at: 36                A_06.cel: 14   Max.   :15.468   Max.   :12.00            
+# (Other)  :288                (Other) :420                                     
+
+droslong %>% filter( gene == "142798_at")
+#        gene  group    label  log2exp time replicate
+# 1  142798_at group1 A_01.cel 15.44825    1         A
+# 2  142798_at group1 A_02.cel 15.46265    2         A
+# 3  142798_at group1 A_03.cel 15.46792    3         A
+# ...
+# 34 142798_at group1 C_10.cel 15.46801   10         C
+# 35 142798_at group1 C_11.cel 15.46456   11         C
+# 36 142798_at group1 C_12.cel 15.46561   12         C
+
+#1. do I need to reorder any ordinal variables?     ie, levels(polls$edu) = c("NoHS", "HS", "SomeColl", "Bacc")
+
+levels(droslong$gene)     #Is there an ordinal or spatial structure here?
+# [1] "141251_at"   "141311_at"   "141404_at"   "142200_at"   "142342_at"   "142356_at"   "142472_at"   "142661_at"   "142709_s_at" "142791_at"   "142798_at"   "143051_at"  
+#[13] "143074_at"   "143143_at"  
+
+#order by group they are in
+ord <- droslong %>% group_by(group, gene) %>% summarise(n=n()) %>% .$gene
+levels(droslong$gene) <- ord
+
+#levels(droslong$group)   Others ordered fine.
+#levels(droslong$label)
+
+#2. any groups with small number of  ; xtabs(~state, data=polls) , xtabs(~state+bush, data=polls)
+#Nope, all genes have 12 time observations for each replicate A, B, C
+#There are 5 genes in group1, 5 in group2, and 4 in group3 ( so 3 is slightly underrepresented.)
+
+groups <- droslong %>% group_by(group, gene) %>% summarise(n = n())
+#    group        gene     n
+# 1  group1   142472_at    36
+# 2  group1   142791_at    36
+# 3  group1   142798_at    36
+# 4  group1   143074_at    36
+# 5  group1   143143_at    36
+# 6  group2   141311_at    36
+# 7  group2   141404_at    36
+# 8  group2   142200_at    36
+# 9  group2   142356_at    36
+# 10 group2   143051_at    36
+# 11 group3   141251_at    36
+# 12 group3   142342_at    36
+# 13 group3   142661_at    36
+# 14 group3 142709_s_at    36
+
+#3. any cofounders 
+
+#SHOW INDIVIDUAL GENES SEPERATELY COLORED BY GROUP
+xyplot(log2exp~time | gene, data=droslong, type = c("p", "r"),  group = group, auto.key = list(lines = TRUE)) #, par.strip.text=list(cex=.5))    #going over 14 genes, these all have variation
+
+#SHOW INDIVIDUAL GROUPS COLORED BY GENE / REPLICATE
+xyplot(log2exp~time | group + replicate, data=droslong, type = c("p", "r"),  group = gene, auto.key = list(lines = TRUE, space = "right"),superpose = F)   #the "gene" variation over time seems to be expressed by the group they are from though ( there are three groups)
+
+# SO GROUP (3) AND GENE (14) BOTH VARY OVER TIME.
+
+#more than 8 colors needed (ggplot defaults to 8 and we have 14 genes)
+library("RColorBrewer")
+mycolors = c(brewer.pal(name="Dark2", n = 8), brewer.pal(name="Paired", n = 6))
+#colorRampPalette(brewer.pal(name="Dark2", n = 8))(14)
+
+#+ geom_line(aes(colour=group)) 
+
+#JUST REPLICATE A
+ggplot( droslong %>% filter(replicate == "A"), aes(time,log2exp,colour=gene)) + geom_point() + geom_line() + scale_color_manual(values = colorRampPalette(brewer.pal(name="Dark2", n = 8))(17)) #+ geom_line(aes(colour=group))   ##GOOD
+
+#ALL REPLICATES FACETED
+ggplot( droslong, aes(time,log2exp,colour=gene)) + geom_point() + geom_line() + facet_wrap(~replicate ) + scale_color_manual(values = colorRampPalette(brewer.pal(name="Dark2", n = 8))(17)) #+ geom_line(aes(colour=group))   ##GOOD
 
 
+##########NOW LMER
+
+
+
+#4. what does glm give out of the box , glm1 = glm(bush~black + female + state, family=binomial(link="logit"), data=polls)
+hlm1 = lm(log2exp ~ time + gene + group + replicate, data=droslong)
+summary(hlm1)  #singularities in group*
+
+#account for different slopes per gene and group
+hlm2 = lmer(log2exp ~ time + replicate + ( 1 + gene | group), data=droslong)   #WARNINGS !! Model failed to converge: degenerate  Hessian with 1 negative eigenvalues
+summary(hlm2)  
+
+
+#
+hlm3 = lmer(log2exp ~ time * group + ( time | gene), data = droslong)
+summary(hlm3)
+coef(hlm3)
+
+r = ranef(hlm3, condVar=TRUE)
+dotplot(r)
+dotplot(r, scales=list(relation='free'))
+
+#http://rpsychologist.com/r-guide-longitudinal-lme-lmer  | #GOOD guide to longitudinal analysis
+#Three Level model - group , gene, replicate , time  
+hlm4 = lmer(log2exp ~ time*group + ( time | gene/replicate), data = droslong)
+summary(hlm4)
+coef(hlm4)
+
+dros_fitted = droslong
+dros_fitted$log2exp = fitted(hlm4)
+
+p1 <- ggplot( droslong, aes(time,log2exp,colour=group)) + geom_point() 
+p1 + geom_line(data=dros_fitted,colour="red")  + facet_wrap(~gene)  
+
+
+#REPLICATE DOESN'T REALLY MATTER, BUT TIME IS CLEARLY NOT LINEAR
+data_avg = droslong %>% group_by(gene,time) %>% summarise(log2exp = mean(log2exp), group = first(group)) %>% select(gene,time,log2exp,group)
+
+hlm5 = lmer(log2exp ~ (time + I(time^2))*group + ( (time + I(time^2)) | gene ), data = data_avg)
+summary(hlm5)
+coef(hlm5)
+
+#gene1pts = which(droslong$gene == "142472_at" & droslong$replicate =="A")
+#gene1 = droslong[gene1pts,]
+gene1pts = which(data_avg$gene == "142472_at")
+gene1 = data_avg[gene1pts,]
+plot(gene1$time, gene1$log2exp, col="blue",ylim=c(10,14))
+lines(gene1$time,fitted(hlm5)[gene1pts],col="red")
+
+
+#FOR NO REPLICATE DATA MODEL, SHOW EACH GENE OVER TIME AND THEIR FITTED LINES
+data_fitted = data_avg
+data_fitted$log2exp = fitted(hlm5)
+
+#get GRAND MEANS
+grandMeans = rep(data_avg %>% group_by(time) %>% summarise(log2exp = mean(log2exp)) %>% .$log2exp,14)   #TO SHOW HOW BAD THAT IDEA IS
+data_grand = data_avg
+data_grand$log2exp = grandMeans
+
+#show GROUP LEVEL MEANS for data avg
+getGroupMeans = function(groupname,groupMeans){ groupMeans %>% filter(group == groupname) %>% .$log2exp }
+groupMeans <- data_avg %>% group_by(group,time) %>% summarise(log2exp = mean(log2exp)) 
+data_group = data_avg
+gg <- data_avg %>% distinct(gene,group)
+gg = gg[,2]
+data_group$log2exp  = as.vector(sapply(gg$group, function(x) getGroupMeans(as.character(x),groupMeans)))
+
+
+#MAKE PLOT FOR EACH GENE USING NO REPLICATE/QUADRATIC TIME MODEL DATA
+p1 <- ggplot( data_avg, aes(time,log2exp,colour=group)) + geom_point() + geom_line() 
+p2 <- p1 + geom_line(data=data_fitted,colour="red") 
+p2 + geom_line(data=data_group,aes(colour=group),linetype="dashed") + facet_wrap(~gene)  
+
+#FOR NOW FINAL RESULTS
+
+
+
+
+#HLM5's model (which does not take replicate into account) is the following
+#lmer(log2exp ~ (time + I(time^2))*group + ( (time + I(time^2)) | gene ), data = data_avg)
+
+# response Y is log2exp of the average of the replicates for a gene ( so now there is only 168 obs)
+# i is the gene
+# j is the group 
+# B_0 diffent intercepts and slopes per group independent of time and allows for correlation between them
+# B_1 accounts for linear time
+# B_2 accounts for quadratic time
+
+Y_ij = β_0j + β_1j*t_1ij + β_2j*(t_1ij)^2 + R_ij 
+
+where 
+  β_0j = gamma_00 + gamma_01 * GROUP_j + U_0j
+  β_1j = gamma_10 + gamma_11 * GROUP_j + U_1j
+  β_2j = gamma_20 + gamma_21 * GROUP_j + U_2j      
+
+  U_0j = N(0, (tau_00)^2 tau_01    tau_02     )
+  U_1j = N(0,  tau_01   (tau_11)^2 tau_12     )
+  U_2j = N(0,  tau_02    tau_21    (tau_22)^2 )
+
+  R_ij ~ N(0, sigma^2)
+
+#TODO ASSIGN PRIORS FOR GAMMA/TAU AND DO MCMC
+
+##4/19
+##### BAYESIAN MODEL SELECTION
+
+#not contriversial when you have scientifically driven priors ( and if you have prior scientific studies use their results as priors over this! )
+#and more data can sometimes amplify the effect of a bad prior!  ( priors on model parameters)
+
+#4 overall schools of thought for model selection ( philosophical positions .. most objective to least )
+#-------------------------------------------------------------
+#1. Complete Coherent approach to all model selection problems
+#    ( Harold Jeffries (cambridge), E.T. James )
+#    -- most people judge these efforts to be a failure
+
+#2. Find the "best" method in some context 
+#3. "Objective" methods are just conventions for when some appearance of "objectivity" is required
+#4. Methods are ad-hoc and useful
+
+#Jame's view is between 3 and 4
+#Jose Banardo (spanish statistician)
+
+#Data model
+#Suppose our data is X
+#There are q candidate data models of the form: 
+#   M_i :  X has density f_i( X | theta_i)      ... theta_i is specific to model f_i ..
+#     i element_of  1 ... q
+#  theta_i element_of Theta_i
+
+
+#A Bayesian model is completed by having a prior, pi_i(theta_i)
+
+#Define the marginal likelihood ("evidence") as 
+#   M_i(x) = integral ( f_i( x |theta_i) * pi_i(theta_i))  d(theta_i)
+
+#If each model has prior probability a_i, then
+# the poster probability that "model i is correct"
+
+# is P( gamma = i | X) = [ a_i * M_i(x) ]  / sum(j=1 to q)a_j * M_j(x)
+
+# where gamma is the model indicator
+
+# Bayes factor: B_ji = M_j(x) / M_i(x)           !!!!
+# which is like the usual, Likelihood ratio which is ratio of two models mles
+# also like a prior odds ratio.
+
+# in Bayes analysis, M_i(x) is what you use to assess something is correct!    All you can compare is marginals.
+# whereas in frequentist its [ f_i(theta_i), pi_i(theta_i) ]
+
+
+###############EXAMPLE        ( bayes just gives us a probability distribution over data to use for prediction )
+# Model M_1 :  y element_of ( -Epsilon, Epsilon )       
+# Model M_2 :  y element_of ( -10Epsilon, 10Epsilon)
+
+If y = 3 Eps , then p( M_1 | y ) = 0
+If y = 0,
+  under M_1: p(y | M_1) = 1 / 2Epsilon
+  under M_2: p(y | M_2) = 1 / 20Epsilon
+  
+so P(M_1 | y) =  (1 / 2Epsilon) / ( 1/2Epsilon + 1/20Epsilon )  =  10/11 in favor of M_1  
+                                                                  ( because M_1 makes a much stronger, concentrated prediciton around the interval -E to E)
+Bayes model selection penalizes "vagueness"  (ie, Model 2)
+"Vagueness" comes from the prior
+
+#########################EXAMPLE 2
+
+M_1 :  y ~ N(0, Sigma^2)
+M_2 :  (y | theta) ~ N(theta, Sigma^2)
+      where Sigma_2 = 1
+      needs a prior
+      eg.  theta ~ N(0, tau^2)
+
+marginal of M_1:  M_1(y) = N(y| 0,1)   |  nothing to marginalize out since there are no hyper parameters
+marginal of M_2:  M_2(y) = N(y | 0, 1 + tau^2)
+
+Bayes Factor
+BF_2,1 = ( 1 / sqrt(tau^2 + 1))  * exp(-y^2/ ( 2(tau^2) + 1)) 
+            ------------------------------------------------
+              exp( -y^2 / 2)
+    
+       =     1 / sqrt(tau^2 + 1) * exp(y^2/2 * tau^2/ tau^2 + 1)
+
+so here you have to choose something remotely to scale for tau^2  because it influences your Bayes Factor 
+
+Lindley paradox
+
+###SENSIBLE IDEAS
+# 1. Never Ever Use Vague Priors for Model Selection ( so never use a Normal Distribution with use Variance )
+# 2. Focus on the Predictive Distribution M_i(x) 
+
+###WHY DO IT
+#1. Posterior Model probabilities are easier to understand than p-values
+#2. Bayesian Model Selection is consistent ( subject to getting the priors right and some other regularity conditions .. Berk 1966 paper)
+#3. Bayesian Model Selection gives an automatic occam's razor effect. ( reward models that are simple, and sharp (ie, not vague.. ie, spread thin over wide range))
+#4. Approach is conceptually the same in all circumstances.
+#5. Approach can account for model uncertainity !
+#      Recall posterior predictive distribution of new data given old data
+#         r_i(y_star | y ) = integral( f_i(y* | theta_i)) pi_i(theta_i | y ) d(theta_i)
+#                                        sampling model    model i posterior    
+#
+#      Model Average predictions:
+#        say we have models 1 ... q  
+#        with posterior probabilities c_hat_i , given y.                      | p( gamma = i | y)
+#         r_tilda(y_star | y) = sum(i=1 to q)[ c_hat_i * r_i(y_star | y) ]    #Model Average predictions.. integrates out which model is true ( average over undercertainty )
+#         
+#6. Bayesian approach can yield optimal frequentist procedures. ( review paper by Berger and Perichi 2001 on website)
+
+
+###DIFFICULTIES/CHALLENGES
+#1. Computation of marginal likelihoods is difficult ( integration is harder than derivation and mle)
+#    ( Nested sampling is the best approach but alot harder to set up in Monte Carlo Markov Chains )
+#      --> Energy-level sampling methods in physics ( see James review paper!!  great technique that should be used more possibly )
+#
+#2. Improper priors yield indeterminant answers
+#    example.  y ~ N(theta, 1)
+#              pi(theta) properto 1
+#              M(y) = integral( N(y(Theta,1) * 1 d(theta))       <-- doesn' integrate to anything so that 1 is your likelihood 
+#
+#3. Use of vague proper priors give terrible answers
+#4. The meaning of "common" parameters can change from model to model
+#   example.   y: mpg ,   x_1: Horse Power, x_2: Weight
+#           M_1:  y_i = alpha + B_1*X_1i + E_i                      // whats the overall relations between MPG and horsepower for B1
+#           M_2:  y_i = alpha + B_1*X_i  + B_2*X_i2 + E_i           // here B1 is what the overall relation between MPG and horsepower keeping Weight constant
+
+#classically you could do an f-test
+
+#3 Approaches to Actually Specifying Priors in Bayesian Computation:   #Default "Objective" Approaches
+#------------------------------------------------------------------
+#1. Convention prior approach ( case by case basis )
+#    example: Data = X = (X1 ... Xn)
+#   M_1: ( X_i | sigma_1^2) ~ N(0, sigma_1^2)
+#   M_2: ( X_i | theta, sigma_2^2) ~ N(theta, sigma_2^2)
+
+#Most famous answer:  Jeffries ( 1961 )  
+# For sigma
+#   say that sigma_1^2 = sigma_2^2 = sigma_2 ("make sigma parameter the same")
+#           and use pi_(sigma^2) = 1/sigma_2 ( only time its ok to use a vague prior is when all models use that)
+# 
+# For pi_(theta) it "should" 
+#   - be centered at 0
+#   - be symmetric
+#   - be scaled by sigma ( standard deviation of the error distribution, ie sampling varaince)
+#   - be heavy tailed  ( to allow it to be consistent)  .. ( no integer moments)
+# Candiate: Cauchy
+# pi_(theta | sigma) = Cauchy( 0, sigma)
+#                    = 1 / ( 3.14*sigma*( 1 + theta^2/sigma^2))
 
 ################################################################################
 #Rob Tibshirani Lecture ( department of biomedical data sciences and statistics )
@@ -1065,4 +1717,49 @@ Half Cauchy is better than Inverse Gamma cause it doesn't force tau.sq to zero!!
 
 
 
-
+# http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
